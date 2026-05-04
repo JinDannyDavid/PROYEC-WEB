@@ -45,28 +45,26 @@ export default function ReportesPage() {
     }
   }, [user, selectedYear]);
 
-  const cargarDatos = async () => {
-    setCargando(true);
-    try {
-      const [statsData, ingresosData, reclamosData, metodosData] = await Promise.all([
-        adminReportService.getDashboardStats(),
-        adminReportService.getIngresosMensuales(selectedYear),
-        adminReportService.getReclamosPorTipo(),
-        adminReportService.getMetodosPagoStats(),
-        //adminReportService.getTopUsuarios(),
-      ]);
-      setStats(statsData);
-      setIngresosMensuales(ingresosData);
-      setReclamosPorTipo(reclamosData);
-      setMetodosPago(metodosData);
-      //setTopUsuarios(topData);
-    } catch (error) {
-      console.error('Error cargando datos:', error);
-      toast.error('No se pudieron cargar los reportes');
-    } finally {
-      setCargando(false);
-    }
-  };
+   const cargarDatos = async () => {
+     setCargando(true);
+     try {
+       const [statsData, ingresosData, reclamosData, metodosData] = await Promise.all([
+         adminReportService.getDashboardStats(),
+         adminReportService.getIngresosMensuales(selectedYear),
+         adminReportService.getReclamosPorTipo(),
+         adminReportService.getMetodosPagoStats(),
+       ]);
+       setStats(statsData);
+       setIngresosMensuales(ingresosData);
+       setReclamosPorTipo(Array.isArray(reclamosData) ? reclamosData : []);
+       setMetodosPago(metodosData);
+     } catch (error) {
+       console.error('Error cargando datos:', error);
+       toast.error('No se pudieron cargar los reportes');
+     } finally {
+       setCargando(false);
+     }
+   };
 
   const handleExportarReporte = () => {
     // TODO: Implementar exportación a PDF/Excel
@@ -157,7 +155,7 @@ export default function ReportesPage() {
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-gray-400">Total reclamos</span>
-                  <span className="text-white font-bold">{reclamosPorTipo.reduce((sum, r) => sum + r.cantidad, 0)}</span>
+                   <span className="text-white font-bold">{reclamosPorTipo.reduce((sum, r) => sum + r.cantidad, 0)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400">Pendientes</span>
@@ -166,9 +164,9 @@ export default function ReportesPage() {
                 <div className="flex justify-between">
                   <span className="text-gray-400">Tasa de resolución</span>
                   <span className="text-white font-bold">
-                    {reclamosPorTipo.reduce((sum, r) => sum + r.cantidad, 0) > 0
-                      ? `${Math.round(((reclamosPorTipo.reduce((sum, r) => sum + r.cantidad, 0) - stats.totalReclamosPendientes) / reclamosPorTipo.reduce((sum, r) => sum + r.cantidad, 0)) * 100)}%`
-                      : '0%'}
+                     {reclamosPorTipo.reduce((sum, r) => sum + r.cantidad, 0) > 0
+                       ? `${Math.round(((reclamosPorTipo.reduce((sum, r) => sum + r.cantidad, 0) - stats.totalReclamosPendientes) / reclamosPorTipo.reduce((sum, r) => sum + r.cantidad, 0)) * 100)}%`
+                       : '0%'}
                   </span>
                 </div>
               </div>
