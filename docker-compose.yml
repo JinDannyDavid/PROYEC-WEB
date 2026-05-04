@@ -1,0 +1,65 @@
+
+services:
+  # Base de datos MySQL
+  db:
+    image: mysql:8.0
+    container_name: jasspalian_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: jasspalian_db
+      MYSQL_USER: jass_user
+      MYSQL_PASSWORD: JassPalian2024
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - jasspalian_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  # Backend Django
+  backend:
+    build: ./jasspalian_backend
+    container_name: jasspalian_backend
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - DB_NAME=jasspalian_db
+      - DB_USER=jass_user
+      - DB_PASSWORD=JassPalian2024
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DEBUG=1
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./jasspalian_backend:/app
+    networks:
+      - jasspalian_network
+
+  # Frontend Next.js
+  frontend:
+    build: ./frontend
+    container_name: jasspalian_frontend
+    restart: always
+    depends_on:
+      - backend
+    environment:
+      - NEXT_PUBLIC_API_URL=http://backend:8000/api
+    ports:
+      - "3000:3000"
+    networks:
+      - jasspalian_network
+
+volumes:
+  mysql_data:
+
+networks:
+  jasspalian_network:
+    driver: bridge

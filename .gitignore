@@ -1,0 +1,53 @@
+# dependencies
+node_modules/
+frontend/node_modules/
+frontend/.next/
+
+# python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+venv/
+env/
+.venv
+jasspalian_backend/venv/
+jasspalian_backend/__pycache__/
+
+# environment
+.env
+.env.local
+.env*.local
+frontend/.env.local
+jasspalian_backend/.env
+
+# database
+*.sqlite3
+db.sqlite3
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# next.js
+frontend/.next/
+frontend/out/
+
+# build
+build/
+dist/
+
+# misc
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+frontend/next-env.d.ts
