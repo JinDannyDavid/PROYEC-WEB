@@ -5,6 +5,7 @@ from django.shortcuts import get_object_or_404
 from django.db.models import Sum
 from api.models import Pago, Factura
 from api.serializers import PagoSerializer, PagoCreateSerializer
+from api.constants import TipoUsuario, PagoEstado
 
 # ============================================
 # VISTAS PARA PAGO CON JWT
@@ -22,7 +23,7 @@ class PagoListCreateView(generics.ListCreateAPIView):
     def get_queryset(self):
         """Filtrar pagos según el usuario"""
         user = self.request.user
-        if user.tipo_usuario == 'ADMIN':
+        if TipoUsuario.is_admin(user.tipo_usuario) or TipoUsuario.can_manage_billing(user.tipo_usuario):
             return Pago.objects.all().order_by('-fecha_pago')
         # Usuarios normales solo ven pagos de sus facturas
         return Pago.objects.filter(
@@ -51,7 +52,7 @@ class PagoDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get_queryset(self):
         """Verificar permisos"""
         user = self.request.user
-        if user.tipo_usuario == 'ADMIN':
+        if TipoUsuario.is_admin(user.tipo_usuario) or TipoUsuario.can_manage_billing(user.tipo_usuario):
             return Pago.objects.all()
         return Pago.objects.filter(factura__propiedad__usuario=user)
 
@@ -67,7 +68,7 @@ class PagosPorFacturaView(generics.ListAPIView):
         
         # Verificar permisos
         user = self.request.user
-        if user.tipo_usuario == 'ADMIN' or factura.propiedad.usuario == user:
+        if TipoUsuario.is_admin(user.tipo_usuario) or TipoUsuario.can_manage_billing(user.tipo_usuario) or factura.propiedad.usuario == user:
             return Pago.objects.filter(factura_id=factura_id).order_by('-fecha_pago')
         return Pago.objects.none()
 

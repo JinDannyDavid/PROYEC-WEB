@@ -1,35 +1,35 @@
-import { FaCalendarAlt } from 'react-icons/fa';
-
 interface DebtCardProps {
   amount: number;
   dueDate: string;
-  consumption: number;
+  consumo: number;
 }
 
-const DebtCard = ({ amount, dueDate, consumption }: DebtCardProps) => {
+export default function DebtCard({ amount, dueDate, consumo }: DebtCardProps) {
   return (
-    <div className="bg-gradient-to-r from-cyan-500 to-blue-500 rounded-2xl p-6 text-white shadow-xl">
-      <div className="flex justify-between items-start mb-4">
+    <div className="card p-6 flex flex-col">
+      <div className="flex items-start justify-between mb-4">
         <div>
-          <p className="text-white/80 text-sm">Deuda Actual</p>
-          <p className="text-3xl font-bold">S/ {amount.toFixed(2)}</p>
+          <p className="text-xs font-medium text-paper-500 label">Deuda actual</p>
+          <p className="text-3xl font-bold text-paper-900 mt-1">
+            S/ {amount.toFixed(2)}
+          </p>
         </div>
-        <div className="bg-white/20 rounded-full px-3 py-1 text-sm">
-          {consumption} m³ este mes
+        <div className="badge-info text-xs">
+          {consumo} m³ este mes
         </div>
       </div>
 
-      <div className="flex justify-between items-center mt-4 pt-4 border-t border-white/20">
-        <div className="flex items-center gap-2">
-          <FaCalendarAlt className="text-white/80" />
-          <span className="text-sm">Vence: {dueDate}</span>
+      <div className="flex items-center justify-between pt-4 border-t border-paper-200 mt-auto">
+        <div className="flex items-center gap-1.5 text-sm text-paper-600">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          <span>Vence: {dueDate}</span>
         </div>
-        <button className="px-6 py-2 bg-white text-blue-600 rounded-lg font-semibold hover:bg-gray-100 transition">
-          Pagar Ahora
-        </button>
+        <a href="/dashboard/pagos" className="btn-primary text-sm px-5 py-2">
+          Pagar ahora
+        </a>
       </div>
     </div>
   );
-};
-
-export default DebtCard;
+}

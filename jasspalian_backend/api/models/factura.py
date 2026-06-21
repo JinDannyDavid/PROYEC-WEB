@@ -1,6 +1,13 @@
 from django.db import models
 from django.utils import timezone
+from django.conf import settings
 from .propiedad import Propiedad
+
+def get_cargo_fijo_default():
+    return getattr(settings, 'JASS_CARGO_FIJO_DEFAULT', 25.00)
+
+def get_cargo_alcantarillado_default():
+    return getattr(settings, 'JASS_CARGO_ALCANTARILLADO_DEFAULT', 15.00)
 
 class Factura(models.Model):
     ESTADO_CHOICES = [
@@ -51,7 +58,7 @@ class Factura(models.Model):
     cargo_fijo = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        default=25.00,
+        default=get_cargo_fijo_default,
         verbose_name="Cargo fijo (S/)"
     )
     cargo_consumo = models.DecimalField(
@@ -63,7 +70,7 @@ class Factura(models.Model):
     cargo_alcantarillado = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        default=15.00,
+        default=get_cargo_alcantarillado_default,
         verbose_name="Cargo por alcantarillado (S/)"
     )
     monto_total = models.DecimalField(
@@ -98,9 +105,9 @@ class Factura(models.Model):
         # Calcular consumo
         self.consumo_m3 = self.lectura_actual - self.lectura_anterior
         
-        # Calcular cargo por consumo (ejemplo: S/ 3.50 por m³)
-        TARIFA_POR_M3 = 3.50
-        self.cargo_consumo = self.consumo_m3 * TARIFA_POR_M3
+        # Calcular cargo por consumo (configurable via settings)
+        tarifa_por_m3 = getattr(settings, 'JASS_TARIFA_POR_M3', 3.50)
+        self.cargo_consumo = self.consumo_m3 * tarifa_por_m3
         
         # Calcular monto total
         self.monto_total = self.cargo_fijo + self.cargo_consumo + self.cargo_alcantarillado
@@ -109,10 +116,12 @@ class Factura(models.Model):
     
     @property
     def esta_vencida(self):
-        """Verifica si la factura está vencida"""
-        if self.estado == 'PENDIENTE' and self.fecha_vencimiento < timezone.now().date():
-            return True
-        return False
+        """Verifica si la factura está vencida (usa fecha actual)"""
+        return self._esta_vencida_en(timezone.now().date())
+    
+    def _esta_vencida_en(self, fecha_referencia):
+        """Verifica vencimiento en una fecha específica (para testing/batches)"""
+        return self.estado == 'PENDIENTE' and self.fecha_vencimiento < fecha_referencia
     
     @property
     def estado_actual(self):

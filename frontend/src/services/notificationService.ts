@@ -11,13 +11,26 @@ export interface Notificacion {
   fecha_lectura?: string;
 }
 
+interface PaginatedResponse<T> {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
+}
+
+function extractData<T>(response: { data: T[] | PaginatedResponse<T> }): T[] {
+  const data = response.data;
+  if (Array.isArray(data)) return data;
+  if (data && typeof data === 'object' && 'results' in data) return data.results;
+  return [];
+}
+
 export const notificationService = {
   // Obtener todas las notificaciones del usuario
   getMisNotificaciones: async (): Promise<Notificacion[]> => {
     try {
       const response = await api.get('/mis-notificaciones/');
-      const data = response.data.results ? response.data.results : response.data;
-      return data;
+      return extractData(response);
     } catch (error) {
       console.error('Error obteniendo notificaciones:', error);
       throw error;

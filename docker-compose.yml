@@ -1,6 +1,7 @@
 
+version: '3.8'
+
 services:
-  # Base de datos MySQL
   db:
     image: mysql:8.0
     container_name: jasspalian_db
@@ -18,10 +19,11 @@ services:
       - jasspalian_network
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
       timeout: 20s
       retries: 10
+    command: --default-authentication-plugin=mysql_native_password
 
-  # Backend Django
   backend:
     build: ./jasspalian_backend
     container_name: jasspalian_backend
@@ -30,20 +32,23 @@ services:
       db:
         condition: service_healthy
     environment:
+      - SECRET_KEY=django-insecure-z4peu@df^km0lbs7+v#q8_t6c!*!mw7j^17-r*q4qh)u$%cii!
       - DB_NAME=jasspalian_db
       - DB_USER=jass_user
       - DB_PASSWORD=JassPalian2024
       - DB_HOST=db
       - DB_PORT=3306
       - DEBUG=1
+      - JASS_TARIFA_POR_M3=3.50
+      - JASS_CARGO_FIJO_DEFAULT=25.00
+      - JASS_CARGO_ALCANTARILLADO_DEFAULT=15.00
+      - DB_WAIT_TIMEOUT=60
+      - DB_WAIT_INTERVAL=2
     ports:
       - "8000:8000"
-    volumes:
-      - ./jasspalian_backend:/app
     networks:
       - jasspalian_network
 
-  # Frontend Next.js
   frontend:
     build: ./frontend
     container_name: jasspalian_frontend
@@ -51,7 +56,8 @@ services:
     depends_on:
       - backend
     environment:
-      - NEXT_PUBLIC_API_URL=http://backend:8000/api
+      - API_URL=http://backend:8000/api
+      - NEXT_PUBLIC_API_URL=http://localhost:8000/api
     ports:
       - "3000:3000"
     networks:

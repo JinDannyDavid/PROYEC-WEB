@@ -1,15 +1,17 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import permissions
+from django.db.models import Sum
+from django.utils import timezone
 from api.models import Usuario, Propiedad, Factura, Pago
+from api.constants import TipoUsuario
 from datetime import datetime
 
 class AdminEstadisticasView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     
     def get(self, request):
-        # Verificar que es administrador
-        if request.user.tipo_usuario != 'ADMIN':
+        if not TipoUsuario.is_admin(request.user.tipo_usuario):
             return Response({'error': 'No autorizado'}, status=403)
         
         # Calcular estadísticas
@@ -17,14 +19,13 @@ class AdminEstadisticasView(APIView):
         total_propiedades = Propiedad.objects.count()
         total_facturas_pendientes = Factura.objects.filter(estado='PENDIENTE').count()
         
-        # Pagos del mes actual
-        ahora = datetime.now()
-        pagos_mes = Pago.objects.filter(
+        # Pagos del mes actual (usando aggregate en BD)
+        ahora = timezone.now()
+        total_pagos_mes = Pago.objects.filter(
             fecha_pago__year=ahora.year,
             fecha_pago__month=ahora.month,
             estado_comprobante='CONFIRMADO'
-        )
-        total_pagos_mes = sum(p.monto for p in pagos_mes)
+        ).aggregate(total=Sum('monto'))['total'] or 0
         
         return Response({
             'totalUsuarios': total_usuarios,

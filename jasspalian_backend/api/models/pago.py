@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, transaction
 from .factura import Factura
 
 class Pago(models.Model):
@@ -64,11 +64,28 @@ class Pago(models.Model):
         return f"Pago {self.codigo_operacion} - S/{self.monto}"
     
     def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        # Si el pago es confirmado, actualizar estado de factura
-        if self.estado_comprobante == 'CONFIRMADO':
-            self.factura.estado = 'PAGADA'
-            self.factura.save()
+        is_new = self.pk is None
+        old_estado = None
+        
+        if not is_new:
+            try:
+                old_instance = Pago.objects.get(pk=self.pk)
+                old_estado = old_instance.estado_comprobante
+            except Pago.DoesNotExist:
+                pass
+        
+        # Si el estado va a cambiar a CONFIRMADO, hacer todo en una transacción atómica
+        if self.estado_comprobante == 'CONFIRMADO' and old_estado != 'CONFIRMADO':
+            with transaction.atomic():
+                super().save(*args, **kwargs)
+                
+                # Bloquear y actualizar factura dentro de la misma transacción
+                factura = Factura.objects.select_for_update().get(pk=self.factura_id)
+                if factura.estado != 'PAGADA':
+                    factura.estado = 'PAGADA'
+                    factura.save(update_fields=['estado'])
+        else:
+            super().save(*args, **kwargs)
     
     @property
     def metodo_pago_texto(self):

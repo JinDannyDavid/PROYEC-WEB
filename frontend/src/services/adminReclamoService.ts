@@ -22,13 +22,26 @@ export interface UpdateReclamoData {
   respuesta: string;
 }
 
+interface PaginatedResponse<T> {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
+}
+
+function extractData<T>(response: { data: T[] | PaginatedResponse<T> }): T[] {
+  const data = response.data;
+  if (Array.isArray(data)) return data;
+  if (data && typeof data === 'object' && 'results' in data) return data.results;
+  return [];
+}
+
 export const adminReclamoService = {
   // Obtener todos los reclamos
   getReclamos: async (): Promise<Reclamo[]> => {
     try {
       const response = await api.get('/reclamos/');
-      const data = response.data.results ? response.data.results : response.data;
-      return data;
+      return extractData(response);
     } catch (error) {
       console.error('Error obteniendo reclamos:', error);
       throw error;

@@ -1,7 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
-from django.core.validators import MinLengthValidator, RegexValidator
+from django.core.validators import RegexValidator
 from django.utils import timezone
+from api.constants import TipoUsuario
 
 class UsuarioManager(BaseUserManager):
     def create_user(self, dni, password=None, **extra_fields):
@@ -26,19 +27,13 @@ class UsuarioManager(BaseUserManager):
         return self.create_user(dni, password, **extra_fields)
 
 class Usuario(AbstractBaseUser, PermissionsMixin):
-    TIPO_USUARIO_CHOICES = [
-        ('VECINO', 'Vecino'),
-        ('ADMIN', 'Administrador'),
-        ('CAJERO', 'Cajero'),
-        ('TECNICO', 'Técnico'),
-    ]
+    TIPO_USUARIO_CHOICES = TipoUsuario.CHOICES
     
     dni = models.CharField(
         max_length=8,
         unique=True,
         validators=[
-            MinLengthValidator(8),
-            RegexValidator(r'^[0-9]+$', 'Solo números permitidos')
+            RegexValidator(r'^[0-9]{8}$', 'DNI debe tener exactamente 8 dígitos')
         ],
         verbose_name="DNI"
     )
@@ -47,8 +42,7 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
     telefono = models.CharField(
         max_length=9,
         validators=[
-            MinLengthValidator(9),
-            RegexValidator(r'^[0-9]+$', 'Solo números permitidos')
+            RegexValidator(r'^[0-9]{9}$', 'Teléfono debe tener exactamente 9 dígitos')
         ],
         verbose_name="Teléfono"
     )

@@ -1,114 +1,82 @@
-// frontend/src/components/dashboard/Header.tsx
 import { useRouter } from 'next/router';
 import { useState } from 'react';
-import { FaBell, FaSearch, FaUserCircle } from 'react-icons/fa';
 
 interface HeaderProps {
   userName: string;
 }
 
-const Header = ({ userName }: HeaderProps) => {
+const pageTitles: Record<string, { title: string; subtitle: string }> = {
+  '/dashboard': { title: 'Dashboard', subtitle: 'Bienvenido al sistema de gestion de agua' },
+  '/dashboard/pagos': { title: 'Pagos', subtitle: 'Realiza tus pagos de agua' },
+  '/dashboard/recibos': { title: 'Mis Recibos', subtitle: 'Consulta tus facturas' },
+  '/dashboard/reclamos': { title: 'Mis Reclamos', subtitle: 'Reporta y da seguimiento' },
+  '/dashboard/historial-pagos': { title: 'Historial de Pagos', subtitle: 'Consulta todos tus pagos' },
+  '/dashboard/notificaciones': { title: 'Notificaciones', subtitle: 'Mantente informado' },
+  '/dashboard/perfil': { title: 'Mi Perfil', subtitle: 'Administra tu informacion personal' },
+  '/dashboard/configuracion': { title: 'Configuracion', subtitle: 'Preferencias de la cuenta' },
+};
+
+export default function Header({ userName }: HeaderProps) {
   const router = useRouter();
   const [showNotifications, setShowNotifications] = useState(false);
 
-  // Por ahora, sin notificaciones (vacío)
-  const notifications: any[] = [];
-  const unreadCount = 0;
+  const pageInfo = pageTitles[router.pathname] || { title: 'Dashboard', subtitle: '' };
 
   return (
-    <header className="bg-white/20 backdrop-blur-lg border-b border-white/20 sticky top-0 z-40">
+    <header className="bg-paper-base border-b border-paper-200 sticky top-0 z-40">
       <div className="px-6 py-4">
         <div className="flex justify-between items-center">
-          {/* Título de la página (dinámico según la ruta) */}
           <div>
-            <h1 className="text-2xl font-bold text-white">
-              {router.pathname.includes('/perfil') ? 'Mi Perfil' :
-               router.pathname.includes('/pagos') ? 'Pagos' :
-               router.pathname.includes('/recibos') ? 'Mis Recibos' :
-               router.pathname.includes('/reclamos') ? 'Mis Reclamos' :
-               router.pathname.includes('/historial-pagos') ? 'Historial de Pagos' :
-               'Dashboard'}
-            </h1>
-            <p className="text-white/60 text-sm">
-              {router.pathname.includes('/perfil') ? 'Administra tu información personal' :
-               router.pathname.includes('/pagos') ? 'Realiza tus pagos de agua' :
-               router.pathname.includes('/recibos') ? 'Consulta tus facturas' :
-               router.pathname.includes('/reclamos') ? 'Reporta y da seguimiento' :
-               router.pathname.includes('/historial-pagos') ? 'Consulta todos tus pagos' :
-               'Bienvenido al sistema de gestión de agua'}
-            </p>
+            <h1 className="text-xl font-bold text-paper-900">{pageInfo.title}</h1>
+            <p className="text-paper-500 text-sm">{pageInfo.subtitle}</p>
           </div>
 
-          {/* Acciones */}
           <div className="flex items-center gap-4">
-            {/* Buscador */}
-            <div className="relative hidden md:block">
-              <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
-              <input
-                type="text"
-                placeholder="Buscar..."
-                className="pl-10 pr-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-400"
-              />
-            </div>
-
-            {/* Notificaciones */}
             <div className="relative">
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
-                className="relative p-2 hover:bg-white/15 rounded-full transition"
+                className="relative p-2 rounded-lg text-paper-500 hover:bg-paper-200 transition-colors"
+                aria-label="Notificaciones"
               >
-                <FaBell className="text-white text-xl" />
-                {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                    {unreadCount}
-                  </span>
-                )}
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
               </button>
 
-              {/* Dropdown de notificaciones */}
               {showNotifications && (
                 <>
-                  {/* Fondo semitransparente detrás del dropdown */}
-                  <div 
-                    className="fixed inset-0 z-40"
-                    onClick={() => setShowNotifications(false)}
-                  />
-                  
-                  <div className="absolute right-0 mt-2 w-96 bg-gray-800 rounded-xl shadow-2xl border border-gray-700 overflow-hidden z-50">
-                    {/* Header del dropdown */}
-                    <div className="p-4 border-b border-gray-700 bg-gray-800/95">
-                      <h3 className="text-white font-semibold">Notificaciones</h3>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)} />
+                  <div className="absolute right-0 mt-2 w-80 card z-50 overflow-hidden">
+                    <div className="p-4 border-b border-paper-200">
+                      <h3 className="font-semibold text-paper-900">Notificaciones</h3>
                     </div>
-                    
-                    {/* Lista de notificaciones - Estado vacío */}
-                    <div className="max-h-96 overflow-y-auto">
-                      <div className="p-8 text-center">
-                        <div className="w-16 h-16 mx-auto mb-4 bg-gray-700 rounded-full flex items-center justify-center">
-                          <FaBell className="text-gray-500 text-2xl" />
-                        </div>
-                        <p className="text-gray-400 font-medium">No hay notificaciones</p>
-                        <p className="text-gray-500 text-sm mt-1">
-                          Cuando recibas notificaciones, aparecerán aquí
-                        </p>
+                    <div className="p-8 text-center">
+                      <div className="w-14 h-14 mx-auto mb-3 rounded-full bg-paper-200 flex items-center justify-center">
+                        <svg className="w-6 h-6 text-paper-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                        </svg>
                       </div>
-                      <button
-                        onClick={() => router.push('/dashboard/notificaciones')}
-                        className="text-sm text-cyan-400 hover:text-cyan-300 transition content-center w-full py-3 border-t border-gray-700 bg-gray-800/95"
-                      >
-                            Ver todas las notificaciones
-                      </button>
+                      <p className="text-paper-600 font-medium">No hay notificaciones</p>
+                      <p className="text-paper-400 text-sm mt-1">Cuando recibas notificaciones, apareceran aqui</p>
                     </div>
+                    <button
+                      onClick={() => { setShowNotifications(false); router.push('/dashboard/notificaciones'); }}
+                      className="w-full py-3 text-sm font-medium text-pvc-blue hover:bg-paper-200 transition-colors border-t border-paper-200"
+                    >
+                      Ver todas las notificaciones
+                    </button>
                   </div>
                 </>
               )}
             </div>
 
-            {/* Perfil */}
-            <div className="flex items-center gap-3">
-              <FaUserCircle className="text-white text-3xl" />
+            <div className="flex items-center gap-3 pl-4 border-l border-paper-200">
+              <div className="w-9 h-9 rounded-lg bg-pvc-blue flex items-center justify-center text-white text-sm font-bold">
+                {userName.charAt(0).toUpperCase()}
+              </div>
               <div className="hidden md:block">
-                <p className="text-white text-sm font-medium">{userName}</p>
-                <p className="text-white/60 text-xs">Vecino</p>
+                <p className="text-sm font-medium text-paper-900">{userName}</p>
+                <p className="text-xs text-paper-500">Vecino</p>
               </div>
             </div>
           </div>
@@ -116,6 +84,4 @@ const Header = ({ userName }: HeaderProps) => {
       </div>
     </header>
   );
-};
-
-export default Header;
+}

@@ -1,11 +1,10 @@
 from rest_framework import serializers
 from api.models import Reclamo
+from api.serializers.mixins import ChoiceDisplayMixin
 
-class ReclamoSerializer(serializers.ModelSerializer):
+class ReclamoSerializer(ChoiceDisplayMixin, serializers.ModelSerializer):
     usuario_nombre = serializers.CharField(source='usuario.nombre_completo', read_only=True)
     propiedad_direccion = serializers.CharField(source='propiedad.direccion', read_only=True)
-    tipo_texto = serializers.SerializerMethodField()
-    estado_texto = serializers.SerializerMethodField()
     tiempo_transcurrido = serializers.SerializerMethodField()
     fecha_formateada = serializers.SerializerMethodField()
     
@@ -13,17 +12,11 @@ class ReclamoSerializer(serializers.ModelSerializer):
         model = Reclamo
         fields = [
             'id', 'usuario', 'usuario_nombre', 'propiedad', 'propiedad_direccion',
-            'tipo', 'tipo_texto', 'descripcion', 'foto_url',
-            'estado', 'estado_texto', 'fecha_creacion', 'fecha_formateada',
+            'tipo', 'tipo_display', 'descripcion', 'foto_url',
+            'estado', 'estado_display', 'fecha_creacion', 'fecha_formateada',
             'tiempo_transcurrido', 'respuesta', 'fecha_respuesta'
         ]
         read_only_fields = ['fecha_creacion']
-    
-    def get_tipo_texto(self, obj):
-        return obj.tipo_texto
-    
-    def get_estado_texto(self, obj):
-        return obj.estado_texto
     
     def get_tiempo_transcurrido(self, obj):
         return obj.tiempo_transcurrido

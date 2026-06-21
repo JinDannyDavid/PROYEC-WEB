@@ -15,10 +15,12 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         return token
     
     def validate(self, attrs):
+        # Crear copia para evitar mutación del diccionario original
+        validated_attrs = dict(attrs)
         # Asegurar que use 'dni' como campo de autenticación
-        attrs['username'] = attrs.get('dni')  # ¡IMPORTANTE!
+        validated_attrs['username'] = validated_attrs.get('dni')
         
-        data = super().validate(attrs)
+        data = super().validate(validated_attrs)
         
         # Agregar datos del usuario en la respuesta
         user = self.user

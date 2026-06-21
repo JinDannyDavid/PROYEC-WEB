@@ -1,4 +1,4 @@
-from rest_framework import generics, permissions, filters, status
+from rest_framework import generics, permissions, filters, status, serializers
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
@@ -10,6 +10,7 @@ from api.serializers import (
     ReclamoCreateSerializer,
     ReclamoUpdateSerializer
 )
+from api.constants import TipoUsuario, ReclamoEstado
 
 # ============================================
 # VISTAS PARA RECLAMO CON JWT
@@ -30,15 +31,17 @@ class ReclamoListCreateView(generics.ListCreateAPIView):
     def get_queryset(self):
         """Filtrar reclamos según el usuario"""
         user = self.request.user
-        if user.tipo_usuario in ['ADMIN', 'TECNICO']:
+        if TipoUsuario.is_admin(user.tipo_usuario) or TipoUsuario.is_tecnico(user.tipo_usuario):
             return Reclamo.objects.all().order_by('-fecha_creacion')
         # Usuarios normales solo ven sus reclamos
         return Reclamo.objects.filter(usuario=user).order_by('-fecha_creacion')
     
     def perform_create(self, serializer):
         """Crear reclamo (verificar propiedad)"""
-        propiedad_id = self.request.data.get('propiedad')
-        propiedad = get_object_or_404(Propiedad, id=propiedad_id)
+        propiedad = serializer.validated_data.get('propiedad')
+        
+        if not propiedad:
+            raise serializers.ValidationError({'propiedad': 'El campo propiedad es requerido'})
         
         # Verificar que la propiedad pertenezca al usuario
         if propiedad.usuario != self.request.user:
@@ -60,18 +63,16 @@ class ReclamoDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get_queryset(self):
         """Verificar permisos"""
         user = self.request.user
-        if user.tipo_usuario in ['ADMIN', 'TECNICO']:
+        if TipoUsuario.is_admin(user.tipo_usuario) or TipoUsuario.is_tecnico(user.tipo_usuario):
             return Reclamo.objects.all()
         return Reclamo.objects.filter(usuario=user)
     
     def perform_update(self, serializer):
         """Actualizar reclamo (solo admin/tecnico pueden cambiar estado)"""
         user = self.request.user
-        if user.tipo_usuario not in ['ADMIN', 'TECNICO']:
-            # Usuarios normales solo pueden ver, no actualizar
+        if not (TipoUsuario.is_admin(user.tipo_usuario) or TipoUsuario.is_tecnico(user.tipo_usuario)):
             raise permissions.PermissionDenied("No tienes permisos para actualizar reclamos")
         
-        # Si se está resolviendo, agregar fecha de respuesta
         if 'estado' in serializer.validated_data:
             serializer.validated_data['fecha_respuesta'] = timezone.now()
         
@@ -98,7 +99,7 @@ class ReclamosPorPropiedadView(generics.ListAPIView):
         
         # Verificar permisos
         user = self.request.user
-        if user.tipo_usuario in ['ADMIN', 'TECNICO'] or propiedad.usuario == user:
+        if TipoUsuario.is_admin(user.tipo_usuario) or TipoUsuario.is_tecnico(user.tipo_usuario) or propiedad.usuario == user:
             return Reclamo.objects.filter(propiedad_id=propiedad_id).order_by('-fecha_creacion')
         return Reclamo.objects.none()
 
@@ -110,7 +111,7 @@ class ReclamosPendientesView(generics.ListAPIView):
     
     def get_queryset(self):
         user = self.request.user
-        if user.tipo_usuario not in ['ADMIN', 'TECNICO']:
+        if not (TipoUsuario.is_admin(user.tipo_usuario) or TipoUsuario.is_tecnico(user.tipo_usuario)):
             return Reclamo.objects.none()
         
         return Reclamo.objects.filter(estado='PENDIENTE').order_by('fecha_creacion')
@@ -122,7 +123,7 @@ class ReclamosEstadisticasView(generics.GenericAPIView):
     
     def get(self, request):
         user = request.user
-        if user.tipo_usuario not in ['ADMIN', 'TECNICO']:
+        if not (TipoUsuario.is_admin(user.tipo_usuario) or TipoUsuario.is_tecnico(user.tipo_usuario)):
             return Response({
                 'success': False,
                 'error': 'No tienes permisos'

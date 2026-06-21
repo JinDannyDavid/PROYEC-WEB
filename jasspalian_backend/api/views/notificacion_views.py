@@ -9,6 +9,7 @@ from api.serializers import (
     NotificacionCreateSerializer,
     NotificacionUpdateSerializer
 )
+from api.constants import TipoUsuario
 
 # ============================================
 # VISTAS PARA NOTIFICACION CON JWT
@@ -26,14 +27,14 @@ class NotificacionListCreateView(generics.ListCreateAPIView):
     def get_queryset(self):
         """Filtrar notificaciones según el usuario"""
         user = self.request.user
-        if user.tipo_usuario == 'ADMIN':
+        if TipoUsuario.is_admin(user.tipo_usuario):
             return Notificacion.objects.all().order_by('-fecha_creacion')
         # Usuarios normales solo ven sus notificaciones
         return Notificacion.objects.filter(usuario=user).order_by('-fecha_creacion')
     
     def perform_create(self, serializer):
         """Crear notificación (solo admin)"""
-        if self.request.user.tipo_usuario != 'ADMIN':
+        if not TipoUsuario.is_admin(self.request.user.tipo_usuario):
             raise permissions.PermissionDenied("No tienes permisos para crear notificaciones")
         serializer.save()
 
@@ -51,7 +52,7 @@ class NotificacionDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get_queryset(self):
         """Verificar permisos"""
         user = self.request.user
-        if user.tipo_usuario == 'ADMIN':
+        if TipoUsuario.is_admin(user.tipo_usuario):
             return Notificacion.objects.all()
         return Notificacion.objects.filter(usuario=user)
 

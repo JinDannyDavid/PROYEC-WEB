@@ -4,12 +4,14 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.db.models import Q
+import re
 from api.models import Usuario
 from api.serializers import (
     UsuarioSerializer,
     UsuarioRegistroSerializer,
     CustomTokenObtainPairSerializer
 )
+from api.constants import TipoUsuario
 
 # ============================================
 # VISTAS PARA USUARIO CON JWT
@@ -37,7 +39,7 @@ class UsuarioListCreateView(generics.ListCreateAPIView):
     def get_queryset(self):
         """Filtrar usuarios según permisos"""
         user = self.request.user
-        if user.is_authenticated and user.tipo_usuario == 'ADMIN':
+        if user.is_authenticated and TipoUsuario.is_admin(user.tipo_usuario):
             return Usuario.objects.all()
         elif user.is_authenticated:
             # Usuarios normales solo ven su propio perfil
@@ -54,7 +56,7 @@ class UsuarioDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get_queryset(self):
         """Usuarios solo pueden ver/editar su propio perfil, admin todos"""
         user = self.request.user
-        if user.tipo_usuario == 'ADMIN':
+        if TipoUsuario.is_admin(user.tipo_usuario):
             return Usuario.objects.all()
         return Usuario.objects.filter(id=user.id)
 
@@ -90,6 +92,21 @@ def actualizar_perfil_view(request):
     }, status=status.HTTP_400_BAD_REQUEST)
 
 
+def validar_fortaleza_password(password: str) -> tuple[bool, str]:
+    """Valida que la contraseña cumpla requisitos mínimos de seguridad"""
+    if len(password) < 8:
+        return False, 'La contraseña debe tener al menos 8 caracteres'
+    if not re.search(r'[A-Z]', password):
+        return False, 'La contraseña debe contener al menos una mayúscula'
+    if not re.search(r'[a-z]', password):
+        return False, 'La contraseña debe contener al menos una minúscula'
+    if not re.search(r'\d', password):
+        return False, 'La contraseña debe contener al menos un número'
+    if not re.search(r'[!@#$%^&*()_+\-=\[\]{};\':"\\|,.<>\/?]', password):
+        return False, 'La contraseña debe contener al menos un carácter especial'
+    return True, ''
+
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def cambiar_password_view(request):
@@ -99,7 +116,6 @@ def cambiar_password_view(request):
     nueva_password = request.data.get('nueva_password')
     confirm_password = request.data.get('confirm_password')
     
-    # Validaciones básicas
     if not password_actual or not nueva_password or not confirm_password:
         return Response({
             'success': False,
@@ -112,20 +128,25 @@ def cambiar_password_view(request):
             'error': 'Las contraseñas nuevas no coinciden'
         }, status=status.HTTP_400_BAD_REQUEST)
     
-    if len(nueva_password) < 6:
+    valido, mensaje = validar_fortaleza_password(nueva_password)
+    if not valido:
         return Response({
             'success': False,
-            'error': 'La contraseña debe tener al menos 6 caracteres'
+            'error': mensaje
         }, status=status.HTTP_400_BAD_REQUEST)
     
-    # Verificar contraseña actual
     if not usuario.check_password(password_actual):
         return Response({
             'success': False,
             'error': 'Contraseña actual incorrecta'
         }, status=status.HTTP_400_BAD_REQUEST)
     
-    # Actualizar contraseña
+    if usuario.check_password(nueva_password):
+        return Response({
+            'success': False,
+            'error': 'La nueva contraseña no puede ser igual a la actual'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
     usuario.set_password(nueva_password)
     usuario.save()
     

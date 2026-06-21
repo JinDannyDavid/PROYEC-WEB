@@ -1,14 +1,14 @@
-// src/components/auth/RegisterContent.tsx
+'use client';
+
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useState } from 'react';
-import { FaEnvelope, FaLock, FaMapMarkerAlt, FaPhone, FaUser } from 'react-icons/fa';
 
 export default function RegisterContent() {
   const router = useRouter();
   const { register } = useAuth();
-  
+
   const [formData, setFormData] = useState({
     dni: '',
     nombres: '',
@@ -26,10 +26,7 @@ export default function RegisterContent() {
   const [successMessage, setSuccessMessage] = useState('');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -39,274 +36,259 @@ export default function RegisterContent() {
     setSuccessMessage('');
 
     if (formData.password !== formData.confirm_password) {
-      setError('Las contraseñas no coinciden');
+      setError('Las contrasenas no coinciden');
       setLoading(false);
       return;
     }
 
     const result = await register(formData);
-    
+
     if (result.success) {
-      setSuccessMessage('✅ ¡Usuario registrado exitosamente! Redirigiendo al login...');
+      setSuccessMessage('Usuario registrado exitosamente. Redirigiendo al inicio de sesion...');
       setFormData({
-        dni: '',
-        nombres: '',
-        apellidos: '',
-        telefono: '',
-        email: '',
-        direccion: '',
-        sector: '',
-        password: '',
-        confirm_password: ''
+        dni: '', nombres: '', apellidos: '', telefono: '',
+        email: '', direccion: '', sector: '', password: '', confirm_password: ''
       });
-      
-      setTimeout(() => {
-        router.push('/login');
-      }, 2000);
+      setTimeout(() => router.push('/login'), 2000);
     } else {
       setError(result.message || 'Error al registrar usuario');
     }
-    
+
     setLoading(false);
   };
 
+  const inputClass = "input-base w-full";
+  const fieldClass = "space-y-1";
+  const labelClass = "block text-sm font-medium text-paper-700";
+
   return (
-    <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      {/* Fondo acuático */}
-      <div className="absolute inset-0 water-gradient" />
-      
-      {/* Burbujas decorativas */}
-      <div className="absolute inset-0 pointer-events-none">
-        {[...Array(10)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute rounded-full bg-white/10 animate-float"
-            style={{
-              width: `${Math.random() * 80 + 20}px`,
-              height: `${Math.random() * 80 + 20}px`,
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animationDuration: `${Math.random() * 5 + 3}s`,
-            }}
-          />
-        ))}
-      </div>
+    <div className="min-h-screen flex items-center justify-center py-12 px-4 surface-1">
+      <div className="absolute inset-0 bg-[url('/assets/images/paper-texture.png')] opacity-30 pointer-events-none" />
 
-      {/* Formulario */}
-      <div className="relative z-10 max-w-md w-full space-y-8 bg-white/10 backdrop-blur-lg p-8 rounded-2xl shadow-2xl">
-        <div className="text-center">
-          <h2 className="text-3xl font-bold text-white">Crear Cuenta</h2>
-          <p className="mt-2 text-white/70">Regístrate para acceder a todos los servicios</p>
-        </div>
-
-        <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
-          {/* Mensajes de error y éxito */}
-          {error && (
-            <div className="bg-red-500/20 border border-red-500 rounded-lg p-3 text-red-200 text-sm">
-              ❌ {error}
+      <div className="relative z-10 w-full max-w-lg">
+        <div className="card p-8">
+          <div className="text-center mb-8">
+            <div className="w-14 h-14 mx-auto mb-4 rounded-xl bg-pvc-blue flex items-center justify-center">
+              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+              </svg>
             </div>
-          )}
+            <h1 className="text-2xl font-bold text-paper-900">Crear cuenta</h1>
+            <p className="text-paper-600 mt-2">
+              Registrate para acceder a los servicios de agua potable
+            </p>
+          </div>
 
-          {successMessage && (
-            <div className="bg-green-500/20 border border-green-500 rounded-lg p-3 text-green-200 text-sm">
-              {successMessage}
-            </div>
-          )}
-
-          {/* DNI */}
-          <div>
-            <label className="block text-white text-sm font-medium mb-2">DNI *</label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <FaUser className="text-white/50" />
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="badge-danger p-3 text-sm" role="alert">
+                {error}
               </div>
+            )}
+
+            {successMessage && (
+              <div className="badge-success p-3 text-sm" role="status">
+                {successMessage}
+              </div>
+            )}
+
+            <div className={fieldClass}>
+              <label htmlFor="reg-dni" className={labelClass}>DNI *</label>
               <input
+                id="reg-dni"
                 name="dni"
                 type="text"
                 value={formData.dni}
                 onChange={handleChange}
-                className="w-full pl-10 pr-3 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                className={inputClass}
                 placeholder="12345678"
                 required
+                inputMode="numeric"
+                maxLength={8}
               />
             </div>
-          </div>
 
-          {/* Nombres y Apellidos */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-white text-sm font-medium mb-2">Nombres *</label>
-              <input
-                name="nombres"
-                type="text"
-                value={formData.nombres}
-                onChange={handleChange}
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-cyan-400"
-                placeholder="Juan"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-white text-sm font-medium mb-2">Apellidos *</label>
-              <input
-                name="apellidos"
-                type="text"
-                value={formData.apellidos}
-                onChange={handleChange}
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-cyan-400"
-                placeholder="Pérez"
-                required
-              />
-            </div>
-          </div>
-
-          {/* Teléfono */}
-          <div>
-            <label className="block text-white text-sm font-medium mb-2">Teléfono *</label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <FaPhone className="text-white/50" />
+            <div className="grid grid-cols-2 gap-4">
+              <div className={fieldClass}>
+                <label htmlFor="reg-nombres" className={labelClass}>Nombres *</label>
+                <input
+                  id="reg-nombres"
+                  name="nombres"
+                  type="text"
+                  value={formData.nombres}
+                  onChange={handleChange}
+                  className={inputClass}
+                  placeholder="Juan"
+                  required
+                />
               </div>
+              <div className={fieldClass}>
+                <label htmlFor="reg-apellidos" className={labelClass}>Apellidos *</label>
+                <input
+                  id="reg-apellidos"
+                  name="apellidos"
+                  type="text"
+                  value={formData.apellidos}
+                  onChange={handleChange}
+                  className={inputClass}
+                  placeholder="Perez"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className={fieldClass}>
+              <label htmlFor="reg-telefono" className={labelClass}>Telefono *</label>
               <input
+                id="reg-telefono"
                 name="telefono"
                 type="tel"
                 value={formData.telefono}
                 onChange={handleChange}
-                className="w-full pl-10 pr-3 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                className={inputClass}
                 placeholder="987654321"
                 required
               />
             </div>
-          </div>
 
-          {/* Email */}
-          <div>
-            <label className="block text-white text-sm font-medium mb-2">Email (opcional)</label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <FaEnvelope className="text-white/50" />
-              </div>
+            <div className={fieldClass}>
+              <label htmlFor="reg-email" className={labelClass}>Email <span className="text-paper-400 font-normal">(opcional)</span></label>
               <input
+                id="reg-email"
                 name="email"
                 type="email"
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full pl-10 pr-3 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                className={inputClass}
                 placeholder="juan@email.com"
               />
             </div>
-          </div>
 
-          {/* Dirección */}
-          <div>
-            <label className="block text-white text-sm font-medium mb-2">Dirección *</label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <FaMapMarkerAlt className="text-white/50" />
-              </div>
+            <div className={fieldClass}>
+              <label htmlFor="reg-direccion" className={labelClass}>Direccion *</label>
               <input
+                id="reg-direccion"
                 name="direccion"
                 type="text"
                 value={formData.direccion}
                 onChange={handleChange}
-                className="w-full pl-10 pr-3 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                className={inputClass}
                 placeholder="Calle Los Pinos 123"
                 required
               />
             </div>
-          </div>
 
-          {/* Sector */}
-          <div>
-            <label className="block text-white text-sm font-medium mb-2">Sector *</label>
-            <input
-              name="sector"
-              type="text"
-              value={formData.sector}
-              onChange={handleChange}
-              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-cyan-400"
-              placeholder="Centro"
-              required
-            />
-          </div>
-
-          {/* Contraseñas */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-white text-sm font-medium mb-2">Contraseña *</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FaLock className="text-white/50" />
-                </div>
-                <input
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={formData.password}
-                  onChange={handleChange}
-                  className="w-full pl-10 pr-3 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-cyan-400"
-                  placeholder="••••••"
-                  required
-                />
-              </div>
+            <div className={fieldClass}>
+              <label htmlFor="reg-sector" className={labelClass}>Sector *</label>
+              <input
+                id="reg-sector"
+                name="sector"
+                type="text"
+                value={formData.sector}
+                onChange={handleChange}
+                className={inputClass}
+                placeholder="Centro"
+                required
+              />
             </div>
-            <div>
-              <label className="block text-white text-sm font-medium mb-2">Confirmar Contraseña *</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FaLock className="text-white/50" />
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className={fieldClass}>
+                <label htmlFor="reg-password" className={labelClass}>Contrasena *</label>
+                <div className="relative">
+                  <input
+                    id="reg-password"
+                    name="password"
+                    type={showPassword ? 'text' : 'password'}
+                    value={formData.password}
+                    onChange={handleChange}
+                    className="input-base w-full pr-10"
+                    placeholder="........"
+                    required
+                    minLength={6}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-paper-400 hover:text-paper-600"
+                    aria-label={showPassword ? 'Ocultar contrasena' : 'Mostrar contrasena'}
+                  >
+                    {showPassword ? (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                      </svg>
+                    ) : (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    )}
+                  </button>
                 </div>
+              </div>
+              <div className={fieldClass}>
+                <label htmlFor="reg-confirm-password" className={labelClass}>Confirmar *</label>
                 <input
+                  id="reg-confirm-password"
                   name="confirm_password"
                   type={showPassword ? 'text' : 'password'}
                   value={formData.confirm_password}
                   onChange={handleChange}
-                  className="w-full pl-10 pr-3 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-cyan-400"
-                  placeholder="••••••"
+                  className={inputClass}
+                  placeholder="........"
                   required
+                  minLength={6}
                 />
               </div>
             </div>
+
+            <div className="flex items-center gap-2">
+              <input
+                id="reg-show-password"
+                type="checkbox"
+                onChange={(e) => setShowPassword(e.target.checked)}
+                className="w-4 h-4 rounded border-paper-300 text-pvc-blue focus:ring-pvc-blue focus:ring-2"
+              />
+              <label htmlFor="reg-show-password" className="text-sm text-paper-700 cursor-pointer">
+                Mostrar contrasenas
+              </label>
+            </div>
+
+            <div className="flex items-start gap-2">
+              <input
+                id="reg-terms"
+                type="checkbox"
+                className="w-4 h-4 mt-0.5 rounded border-paper-300 text-pvc-blue focus:ring-pvc-blue focus:ring-2"
+                required
+              />
+              <label htmlFor="reg-terms" className="text-sm text-paper-700">
+                Acepto los{' '}
+                <a href="/terminos" className="text-pvc-blue hover:underline">terminos y condiciones</a>
+              </label>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="btn-primary w-full"
+            >
+              {loading ? 'Registrando...' : 'Crear cuenta'}
+            </button>
+
+            <p className="text-center text-sm text-paper-600">
+              ¿Ya tienes una cuenta?{' '}
+              <Link href="/login" className="font-medium text-pvc-blue hover:underline">
+                Inicia sesion
+              </Link>
+            </p>
+          </form>
+
+          <div className="mt-6 pt-6 border-t border-paper-200">
+            <p className="text-xs text-center text-paper-500">
+              JASS Palian — Junta Administradora de Servicios de Saneamiento
+            </p>
           </div>
-
-          {/* Mostrar contraseñas */}
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              onChange={(e) => setShowPassword(e.target.checked)}
-              className="rounded border-white/20 bg-white/10 text-cyan-500 focus:ring-cyan-400"
-            />
-            <span className="ml-2 text-sm text-white/70">Mostrar contraseñas</span>
-          </div>
-
-          {/* Términos y condiciones */}
-          <div className="flex items-center">
-            <input 
-              type="checkbox" 
-              className="rounded border-white/20 bg-white/10 text-cyan-500 focus:ring-cyan-400" 
-              required 
-            />
-            <span className="ml-2 text-sm text-white/70">
-              Acepto los <a href="#" className="text-cyan-300 hover:text-cyan-200">términos y condiciones</a>
-            </span>
-          </div>
-
-          {/* Botón de registro */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-semibold rounded-xl hover:from-cyan-600 hover:to-blue-600 transition-all duration-300 disabled:opacity-50"
-          >
-            {loading ? 'Registrando...' : 'Registrarse'}
-          </button>
-
-          {/* Enlace a login */}
-          <p className="text-center text-white/70">
-            ¿Ya tienes una cuenta?{' '}
-            <Link href="/login" className="text-cyan-300 hover:text-cyan-200 font-semibold">
-              Inicia Sesión
-            </Link>
-          </p>
-        </form>
+        </div>
       </div>
     </div>
   );

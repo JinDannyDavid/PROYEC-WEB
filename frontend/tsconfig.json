@@ -14,7 +14,7 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
-    "types": ["@types/node", "@types/react", "@types/react-dom"],
+    "types": ["@types/node", "@types/react", "@types/react-dom", "@types/jest", "@testing-library/jest-dom"],
     "paths": {
       "@/*": ["./src/*"]
     },

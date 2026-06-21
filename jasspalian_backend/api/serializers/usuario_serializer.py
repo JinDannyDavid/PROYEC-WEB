@@ -1,8 +1,8 @@
 from rest_framework import serializers
 from api.models import Usuario
-from django.contrib.auth.hashers import make_password
+from api.serializers.mixins import ChoiceDisplayMixin
 
-class UsuarioSerializer(serializers.ModelSerializer):
+class UsuarioSerializer(ChoiceDisplayMixin, serializers.ModelSerializer):
     nombre_completo = serializers.SerializerMethodField()
     fecha_registro_formateada = serializers.SerializerMethodField()
     
@@ -10,7 +10,7 @@ class UsuarioSerializer(serializers.ModelSerializer):
         model = Usuario
         fields = [
             'id', 'dni', 'nombres', 'apellidos', 'nombre_completo',
-            'telefono', 'email', 'direccion', 'sector', 'tipo_usuario',
+            'telefono', 'email', 'direccion', 'sector', 'tipo_usuario', 'tipo_usuario_display',
             'foto_url', 'fecha_registro', 'fecha_registro_formateada', 'activo',
             'is_active', 'is_staff', 'is_superuser'
         ]
@@ -25,8 +25,8 @@ class UsuarioSerializer(serializers.ModelSerializer):
         return None
 
 class UsuarioRegistroSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, min_length=6)
-    confirm_password = serializers.CharField(write_only=True, min_length=6)
+    password = serializers.CharField(write_only=True, min_length=8)
+    confirm_password = serializers.CharField(write_only=True, min_length=8)
     
     class Meta:
         model = Usuario
@@ -40,6 +40,27 @@ class UsuarioRegistroSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({
                 'confirm_password': 'Las contraseñas no coinciden'
             })
+        
+        # Validar fortaleza de contraseña (consistente con cambiar_password)
+        password = data['password']
+        import re
+        if not re.search(r'[A-Z]', password):
+            raise serializers.ValidationError({
+                'password': 'La contraseña debe contener al menos una mayúscula'
+            })
+        if not re.search(r'[a-z]', password):
+            raise serializers.ValidationError({
+                'password': 'La contraseña debe contener al menos una minúscula'
+            })
+        if not re.search(r'\d', password):
+            raise serializers.ValidationError({
+                'password': 'La contraseña debe contener al menos un número'
+            })
+        if not re.search(r'[!@#$%^&*()_+\-=\[\]{};\':"\\|,.<>\/?]', password):
+            raise serializers.ValidationError({
+                'password': 'La contraseña debe contener al menos un carácter especial'
+            })
+        
         return data
     
     def validate_dni(self, value):
@@ -50,10 +71,10 @@ class UsuarioRegistroSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data.pop('confirm_password')
         password = validated_data.pop('password')
+        dni = validated_data.pop('dni')
         
-        # Usar create_user para hashear la contraseña
-        usuario = Usuario.objects.create(
-            dni=validated_data.pop('dni'),
+        usuario = Usuario.objects.create_user(
+            dni=dni,
             password=password,
             **validated_data
         )

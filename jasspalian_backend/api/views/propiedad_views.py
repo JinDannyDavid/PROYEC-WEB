@@ -5,6 +5,7 @@ from rest_framework.decorators import api_view, permission_classes
 from django.shortcuts import get_object_or_404
 from api.models import Propiedad, Usuario
 from api.serializers import PropiedadSerializer, PropiedadCreateSerializer
+from api.constants import TipoUsuario
 
 # ============================================
 # VISTAS PARA PROPIEDAD CON JWT
@@ -22,7 +23,7 @@ class PropiedadListCreateView(generics.ListCreateAPIView):
     def get_queryset(self):
         """Filtrar propiedades según el usuario"""
         user = self.request.user
-        if user.tipo_usuario == 'ADMIN':
+        if TipoUsuario.is_admin(user.tipo_usuario):
             return Propiedad.objects.all().order_by('-id')
         # Usuarios normales solo ven sus propiedades
         return Propiedad.objects.filter(usuario=user).order_by('-id')
@@ -41,7 +42,7 @@ class PropiedadDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get_queryset(self):
         """Verificar permisos"""
         user = self.request.user
-        if user.tipo_usuario == 'ADMIN':
+        if TipoUsuario.is_admin(user.tipo_usuario):
             return Propiedad.objects.all()
         return Propiedad.objects.filter(usuario=user)
     
@@ -70,7 +71,7 @@ class PropiedadesPorUsuarioView(generics.ListAPIView):
     
     def get_queryset(self):
         user = self.request.user
-        if user.tipo_usuario != 'ADMIN':
+        if not TipoUsuario.is_admin(user.tipo_usuario):
             return Propiedad.objects.none()
         
         usuario_id = self.kwargs.get('usuario_id')

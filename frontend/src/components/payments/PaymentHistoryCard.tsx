@@ -1,6 +1,3 @@
-// frontend/src/components/payments/PaymentHistoryCard.tsx
-import { FaBuilding, FaCheckCircle, FaDownload, FaEye, FaMoneyBillWave, FaPhone, FaYenSign } from 'react-icons/fa';
-
 interface Pago {
   id: number;
   factura: number;
@@ -18,85 +15,58 @@ interface PaymentHistoryCardProps {
   onDescargar: (pago: Pago) => void;
 }
 
-const getMethodConfig = (metodo: string) => {
-  switch (metodo) {
-    case 'YAPE':
-      return { icon: FaYenSign, label: 'Yape', color: 'green', bg: 'bg-green-500/20' };
-    case 'PLIN':
-      return { icon: FaPhone, label: 'Plin', color: 'purple', bg: 'bg-purple-500/20' };
-    case 'TRANSFERENCIA':
-      return { icon: FaBuilding, label: 'Transferencia', color: 'blue', bg: 'bg-blue-500/20' };
-    default:
-      return { icon: FaMoneyBillWave, label: 'Efectivo', color: 'orange', bg: 'bg-orange-500/20' };
-  }
+const methodLabel: Record<string, string> = {
+  YAPE: 'Yape', PLIN: 'Plin', TRANSFERENCIA: 'Transferencia',
 };
 
 export default function PaymentHistoryCard({ pago, onVerComprobante, onDescargar }: PaymentHistoryCardProps) {
-  const method = getMethodConfig(pago.metodo_pago);
-  const IconComponent = method.icon;
-  const fechaFormateada = new Date(pago.fecha_pago).toLocaleDateString('es-PE', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
+  const label = methodLabel[pago.metodo_pago] || pago.metodo_pago;
+  const fecha = new Date(pago.fecha_pago).toLocaleDateString('es-PE', {
+    day: 'numeric', month: 'long', year: 'numeric',
   });
 
   return (
-    <div className="bg-white/10 backdrop-blur-lg rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300">
-      <div className="p-5">
-        {/* Header */}
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-full ${method.bg} flex items-center justify-center`}>
-              <IconComponent className={`text-${method.color}-400 text-lg`} />
-            </div>
-            <div>
-              <h3 className="text-white font-semibold">{method.label}</h3>
-              <p className="text-white/50 text-xs">{fechaFormateada}</p>
-            </div>
+    <div className="card p-5">
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-canal-ok/10 text-canal-ok flex items-center justify-center">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
           </div>
-          <div className="flex items-center gap-1">
-            <FaCheckCircle className="text-green-400 text-sm" />
-            <span className="text-green-400 text-xs font-medium">Confirmado</span>
+          <div>
+            <h3 className="font-semibold text-paper-900">{label}</h3>
+            <p className="text-paper-500 text-xs">{fecha}</p>
           </div>
         </div>
+        <span className="text-xs text-canal-ok font-medium badge-success">Confirmado</span>
+      </div>
 
-        {/* Detalles */}
-        <div className="space-y-2 mb-4">
-          <div className="flex justify-between items-center">
-            <span className="text-white/60 text-sm">Código de operación</span>
-            <span className="text-white/80 font-mono text-xs">{pago.codigo_operacion}</span>
-          </div>
-          {pago.factura_numero && (
-            <div className="flex justify-between items-center">
-              <span className="text-white/60 text-sm">Factura</span>
-              <span className="text-white/80 text-sm">{pago.factura_numero}</span>
-            </div>
-          )}
+      <div className="space-y-2 mb-4">
+        <div className="flex justify-between text-sm">
+          <span className="text-paper-500">Codigo de operacion</span>
+          <span className="font-mono text-paper-900 text-xs">{pago.codigo_operacion}</span>
         </div>
-
-        {/* Monto y acciones */}
-        <div className="border-t border-white/10 pt-4 mt-2">
-          <div className="flex justify-between items-center mb-4">
-            <span className="text-white/60 text-sm">Monto pagado</span>
-            <span className="text-2xl font-bold text-cyan-300">S/ {pago.monto.toFixed(2)}</span>
+        {pago.factura_numero && (
+          <div className="flex justify-between text-sm">
+            <span className="text-paper-500">Factura</span>
+            <span className="text-paper-900">{pago.factura_numero}</span>
           </div>
+        )}
+      </div>
 
-          <div className="flex gap-3">
-            <button
-              onClick={() => onVerComprobante(pago)}
-              className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition"
-            >
-              <FaEye className="text-sm" />
-              <span className="text-sm font-medium">Comprobante</span>
-            </button>
-            <button
-              onClick={() => onDescargar(pago)}
-              className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition"
-            >
-              <FaDownload className="text-sm" />
-              <span className="text-sm font-medium">Descargar</span>
-            </button>
-          </div>
+      <div className="border-t border-paper-200 pt-4">
+        <div className="flex justify-between items-center mb-4">
+          <span className="text-paper-500 text-sm">Monto pagado</span>
+          <span className="text-2xl font-bold text-paper-900">S/ {pago.monto.toFixed(2)}</span>
+        </div>
+        <div className="flex gap-3">
+          <button onClick={() => onVerComprobante(pago)} className="btn-outline flex-1 text-sm py-2">
+            Comprobante
+          </button>
+          <button onClick={() => onDescargar(pago)} className="btn-outline flex-1 text-sm py-2">
+            Descargar
+          </button>
         </div>
       </div>
     </div>

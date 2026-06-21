@@ -1,24 +1,17 @@
 from rest_framework import serializers
 from api.models import Propiedad
+from api.serializers.mixins import ChoiceDisplayMixin
 
-class PropiedadSerializer(serializers.ModelSerializer):
+class PropiedadSerializer(ChoiceDisplayMixin, serializers.ModelSerializer):
     usuario_nombre = serializers.CharField(source='usuario.nombre_completo', read_only=True)
-    estado_texto = serializers.SerializerMethodField()
-    tipo_texto = serializers.SerializerMethodField()
     
     class Meta:
         model = Propiedad
         fields = [
             'id', 'usuario', 'usuario_nombre', 'direccion', 'sector',
-            'numero_medidor', 'tipo_propiedad', 'tipo_texto',
-            'estado', 'estado_texto'
+            'numero_medidor', 'tipo_propiedad', 'tipo_propiedad_display',
+            'estado', 'estado_display'
         ]
-    
-    def get_estado_texto(self, obj):
-        return obj.estado_texto
-    
-    def get_tipo_texto(self, obj):
-        return obj.tipo_texto
 
 
 class PropiedadCreateSerializer(serializers.ModelSerializer):

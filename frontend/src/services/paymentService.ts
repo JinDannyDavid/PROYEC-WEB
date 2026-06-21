@@ -1,5 +1,6 @@
 // frontend/src/services/paymentService.ts
 import { api } from './api';
+import { BaseApiService, defaultExtractData } from './baseApi';
 
 export interface Factura {
   id: number;
@@ -37,25 +38,19 @@ export interface CreatePagoData {
   codigo_operacion: string;
 }
 
+// Servicios usando BaseApiService para CRUD estándar
+const facturasService = new BaseApiService<Factura>({ endpoint: '/facturas/', extractData: defaultExtractData });
+const pagosService = new BaseApiService<Pago, CreatePagoData>({ endpoint: '/pagos/', extractData: defaultExtractData });
+
 export const paymentService = {
   // Obtener todas las facturas del usuario
-  getFacturas: async (): Promise<Factura[]> => {
-    try {
-      const response = await api.get('/facturas/');
-      const data = response.data.results ? response.data.results : response.data;
-      return data;
-    } catch (error) {
-      console.error('Error obteniendo facturas:', error);
-      throw error;
-    }
-  },
+  getFacturas: () => facturasService.getAll(),
 
-  // Obtener facturas pendientes
+  // Obtener facturas pendientes (endpoint personalizado)
   getFacturasPendientes: async (): Promise<Factura[]> => {
     try {
       const response = await api.get('/facturas/pendientes/');
-      const data = response.data.results ? response.data.results : response.data;
-      return data;
+      return defaultExtractData(response);
     } catch (error) {
       console.error('Error obteniendo facturas pendientes:', error);
       throw error;
@@ -63,22 +58,13 @@ export const paymentService = {
   },
 
   // Obtener una factura por ID
-  getFacturaById: async (id: number): Promise<Factura> => {
-    try {
-      const response = await api.get(`/facturas/${id}/`);
-      return response.data;
-    } catch (error) {
-      console.error(`Error obteniendo factura ${id}:`, error);
-      throw error;
-    }
-  },
+  getFacturaById: (id: number) => facturasService.getById(id),
 
   // Obtener historial de pagos del usuario
   getMisPagos: async (): Promise<Pago[]> => {
     try {
       const response = await api.get('/mis-pagos/');
-      const data = response.data.results ? response.data.results : response.data;
-      return data;
+      return defaultExtractData(response);
     } catch (error) {
       console.error('Error obteniendo pagos:', error);
       throw error;
@@ -86,15 +72,7 @@ export const paymentService = {
   },
 
   // Registrar un nuevo pago
-  createPago: async (data: CreatePagoData): Promise<Pago> => {
-    try {
-      const response = await api.post('/pagos/', data);
-      return response.data;
-    } catch (error) {
-      console.error('Error creando pago:', error);
-      throw error;
-    }
-  },
+  createPago: (data: CreatePagoData) => pagosService.create(data),
 
   // Obtener resumen de pagos
   getResumenPagos: async (): Promise<{

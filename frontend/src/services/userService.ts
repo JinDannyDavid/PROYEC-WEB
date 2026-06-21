@@ -30,12 +30,19 @@ export interface ChangePasswordData {
   confirm_password: string;
 }
 
+// Helper para extraer datos de respuesta con envoltorio {data: ...} o directo
+function extractResponseData<T>(response: { data: T | { data: T } }): T {
+  const data = response.data;
+  if (data && typeof data === 'object' && 'data' in data) return (data as { data: T }).data;
+  return data as T;
+}
+
 export const userService = {
   // Obtener perfil del usuario
   getPerfil: async (): Promise<Usuario> => {
     try {
       const response = await api.get('/perfil/');
-      return response.data.data || response.data;
+      return extractResponseData(response);
     } catch (error) {
       console.error('Error obteniendo perfil:', error);
       throw error;
@@ -46,7 +53,7 @@ export const userService = {
   updatePerfil: async (data: UpdateUserData): Promise<Usuario> => {
     try {
       const response = await api.patch('/perfil/actualizar/', data);
-      return response.data.data || response.data;
+      return extractResponseData(response);
     } catch (error) {
       console.error('Error actualizando perfil:', error);
       throw error;

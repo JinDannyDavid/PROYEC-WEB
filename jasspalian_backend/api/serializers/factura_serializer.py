@@ -1,7 +1,8 @@
 from rest_framework import serializers
 from api.models import Factura
+from api.serializers.mixins import ChoiceDisplayMixin
 
-class FacturaSerializer(serializers.ModelSerializer):
+class FacturaSerializer(ChoiceDisplayMixin, serializers.ModelSerializer):
     propiedad_direccion = serializers.CharField(source='propiedad.direccion', read_only=True)
     estado_actual = serializers.SerializerMethodField()
     monto_formateado = serializers.SerializerMethodField()

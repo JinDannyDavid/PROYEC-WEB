@@ -1,6 +1,3 @@
-// frontend/src/components/complaints/ComplaintCard.tsx
-import { FaEye, FaQuestion, FaReceipt, FaTint, FaTools, FaWater } from 'react-icons/fa';
-
 interface Reclamo {
   id: number;
   tipo: string;
@@ -17,80 +14,57 @@ interface ComplaintCardProps {
   onVerDetalle: (reclamo: Reclamo) => void;
 }
 
-const getTipoConfig = (tipo: string) => {
-  switch (tipo) {
-    case 'FUGA':
-      return { icon: FaWater, label: 'Fuga de agua', color: 'blue' };
-    case 'CALIDAD_AGUA':
-      return { icon: FaTint, label: 'Calidad del agua', color: 'cyan' };
-    case 'MEDIDOR':
-      return { icon: FaTools, label: 'Problema con medidor', color: 'purple' };
-    case 'FACTURACION':
-      return { icon: FaReceipt, label: 'Problema de facturación', color: 'orange' };
-    default:
-      return { icon: FaQuestion, label: 'Otro', color: 'gray' };
-  }
+const tipoLabel: Record<string, string> = {
+  FUGA: 'Fuga de agua',
+  CALIDAD_AGUA: 'Calidad del agua',
+  MEDIDOR: 'Problema con medidor',
+  FACTURACION: 'Problema de facturacion',
 };
 
-const getStatusConfig = (estado: string) => {
-  switch (estado) {
-    case 'PENDIENTE':
-      return { label: 'Pendiente', color: 'orange', bg: 'bg-orange-500/20', text: 'text-orange-400', dot: 'bg-orange-500' };
-    case 'EN_PROCESO':
-      return { label: 'En proceso', color: 'blue', bg: 'bg-blue-500/20', text: 'text-blue-400', dot: 'bg-blue-500' };
-    case 'RESUELTO':
-      return { label: 'Resuelto', color: 'green', bg: 'bg-green-500/20', text: 'text-green-400', dot: 'bg-green-500' };
-    case 'RECHAZADO':
-      return { label: 'Rechazado', color: 'red', bg: 'bg-red-500/20', text: 'text-red-400', dot: 'bg-red-500' };
-    default:
-      return { label: estado, color: 'gray', bg: 'bg-gray-500/20', text: 'text-gray-400', dot: 'bg-gray-500' };
-  }
+const statusConfig: Record<string, { label: string; badge: string; dot: string }> = {
+  PENDIENTE: { label: 'Pendiente', badge: 'badge-warning', dot: 'bg-alert' },
+  EN_PROCESO: { label: 'En proceso', badge: 'badge-info', dot: 'bg-pvc-blue' },
+  RESUELTO: { label: 'Resuelto', badge: 'badge-success', dot: 'bg-canal-ok' },
+  RECHAZADO: { label: 'Rechazado', badge: 'badge-danger', dot: 'bg-stamp-red' },
+};
+
+const tipoIcons: Record<string, string> = {
+  FUGA: 'M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z',
+  CALIDAD_AGUA: 'M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z',
 };
 
 export default function ComplaintCard({ reclamo, onVerDetalle }: ComplaintCardProps) {
-  const tipo = getTipoConfig(reclamo.tipo);
-  const status = getStatusConfig(reclamo.estado);
-  const IconComponent = tipo.icon;
-
-  const fechaFormateada = new Date(reclamo.fecha_creacion).toLocaleDateString('es-PE');
+  const tipo = tipoLabel[reclamo.tipo] || 'Otro';
+  const status = statusConfig[reclamo.estado] || statusConfig.PENDIENTE;
+  const fecha = new Date(reclamo.fecha_creacion).toLocaleDateString('es-PE');
 
   return (
-    <div className="bg-white/10 backdrop-blur-lg rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300">
-      <div className="p-5">
-        {/* Header */}
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-full bg-${tipo.color}-500/20 flex items-center justify-center`}>
-              <IconComponent className={`text-${tipo.color}-400 text-lg`} />
-            </div>
-            <div>
-              <h3 className="text-white font-semibold">{tipo.label}</h3>
-              <p className="text-white/50 text-xs">{fechaFormateada}</p>
-            </div>
+    <div className="card p-5">
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-alert/10 text-alert flex items-center justify-center">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
           </div>
-          <div className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${status.dot} animate-pulse`} />
-            <span className={`${status.text} text-xs font-medium`}>{status.label}</span>
+          <div>
+            <h3 className="font-semibold text-paper-900 text-sm">{tipo}</h3>
+            <p className="text-paper-500 text-xs">{fecha}</p>
           </div>
         </div>
-
-        {/* Descripción */}
-        <p className="text-white/80 text-sm line-clamp-2 mb-4">
-          {reclamo.descripcion}
-        </p>
-
-        {/* Footer */}
-        <div className="flex justify-between items-center pt-3 border-t border-white/10">
-          {reclamo.propiedad_nombre && (
-            <span className="text-white/40 text-xs">📍 {reclamo.propiedad_nombre}</span>
-          )}
-          <button
-            onClick={() => onVerDetalle(reclamo)}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/10 text-white/80 hover:bg-white/20 transition text-sm"
-          >
-            <FaEye className="text-xs" /> Ver detalle
-          </button>
+        <div className="flex items-center gap-2">
+          <div className={`w-2 h-2 rounded-full ${status.dot}`} />
+          <span className={`${status.badge} text-xs`}>{status.label}</span>
         </div>
+      </div>
+      <p className="text-paper-700 text-sm line-clamp-2 mb-4">{reclamo.descripcion}</p>
+      <div className="flex justify-between items-center pt-3 border-t border-paper-200">
+        {reclamo.propiedad_nombre && (
+          <span className="text-paper-400 text-xs">{reclamo.propiedad_nombre}</span>
+        )}
+        <button onClick={() => onVerDetalle(reclamo)} className="btn-outline text-xs py-1.5 px-3">
+          Ver detalle
+        </button>
       </div>
     </div>
   );
