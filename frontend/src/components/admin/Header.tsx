@@ -1,74 +1,83 @@
-// frontend/src/components/admin/Header.tsx
 import { useRouter } from 'next/router';
 import { useState } from 'react';
-import { FaBell, FaSearch, FaUserCircle } from 'react-icons/fa';
 
 interface HeaderProps {
   userName: string;
 }
 
-const Header = ({ userName }: HeaderProps) => {
+const pageTitles: Record<string, string> = {
+  '/admin': 'Dashboard',
+  '/admin/usuarios': 'Gestion de Usuarios',
+  '/admin/propiedades': 'Gestion de Propiedades',
+  '/admin/facturas': 'Gestion de Facturas',
+  '/admin/pagos': 'Registro de Pagos',
+  '/admin/reclamos': 'Gestion de Reclamos',
+  '/admin/reportes': 'Reportes y Estadisticas',
+};
+
+export default function Header({ userName }: HeaderProps) {
   const router = useRouter();
   const [showNotifications, setShowNotifications] = useState(false);
 
-  const getPageTitle = () => {
-    if (router.pathname === '/admin') return 'Dashboard';
-    if (router.pathname === '/admin/usuarios') return 'Gestión de Usuarios';
-    if (router.pathname === '/admin/propiedades') return 'Gestión de Propiedades';
-    if (router.pathname === '/admin/facturas') return 'Gestión de Facturas';
-    if (router.pathname === '/admin/pagos') return 'Registro de Pagos';
-    if (router.pathname === '/admin/reclamos') return 'Gestión de Reclamos';
-    if (router.pathname === '/admin/reportes') return 'Reportes y Estadísticas';
-    return 'Administración';
-  };
-
   return (
-    <header className="bg-gray-800 shadow-lg sticky top-0 z-10">
+    <header className="bg-paper-base border-b border-paper-200 sticky top-0 z-10">
       <div className="px-6 py-4">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-bold text-white">{getPageTitle()}</h1>
-            <p className="text-gray-400 text-sm">Bienvenido, {userName}</p>
+            <h1 className="text-xl font-bold text-paper-900">{pageTitles[router.pathname] || 'Administracion'}</h1>
+            <p className="text-paper-500 text-sm">Bienvenido, {userName}</p>
           </div>
 
           <div className="flex items-center gap-4">
-            {/* Buscador */}
             <div className="relative hidden md:block">
-              <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" />
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-paper-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
               <input
                 type="text"
                 placeholder="Buscar..."
-                className="pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                className="input-base pl-10 w-64"
               />
             </div>
 
-            {/* Notificaciones */}
             <div className="relative">
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
-                className="relative p-2 hover:bg-gray-700 rounded-full transition"
+                className="relative p-2 rounded-lg text-paper-500 hover:bg-paper-200 transition-colors"
+                aria-label="Notificaciones"
               >
-                <FaBell className="text-gray-300 text-xl" />
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
               </button>
 
               {showNotifications && (
-                <div className="absolute right-0 mt-2 w-80 bg-gray-800 rounded-xl shadow-2xl border border-gray-700 overflow-hidden z-50">
-                  <div className="p-3 border-b border-gray-700">
-                    <h3 className="text-white font-semibold">Notificaciones</h3>
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)} />
+                  <div className="absolute right-0 mt-2 w-80 card z-50 overflow-hidden">
+                    <div className="p-4 border-b border-paper-200">
+                      <h3 className="font-semibold text-paper-900">Notificaciones</h3>
+                    </div>
+                    <div className="p-8 text-center">
+                      <div className="w-14 h-14 mx-auto mb-3 rounded-full bg-paper-200 flex items-center justify-center">
+                        <svg className="w-6 h-6 text-paper-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                        </svg>
+                      </div>
+                      <p className="text-paper-600 font-medium">No hay notificaciones</p>
+                    </div>
                   </div>
-                  <div className="p-8 text-center">
-                    <p className="text-gray-400">No hay notificaciones</p>
-                  </div>
-                </div>
+                </>
               )}
             </div>
 
-            {/* Perfil */}
-            <div className="flex items-center gap-3">
-              <FaUserCircle className="text-gray-300 text-3xl" />
+            <div className="flex items-center gap-3 pl-4 border-l border-paper-200">
+              <div className="w-9 h-9 rounded-lg bg-pvc-blue flex items-center justify-center text-white text-sm font-bold">
+                {userName.charAt(0).toUpperCase()}
+              </div>
               <div className="hidden md:block">
-                <p className="text-white text-sm font-medium">{userName}</p>
-                <p className="text-gray-400 text-xs">Administrador</p>
+                <p className="text-sm font-medium text-paper-900">{userName}</p>
+                <p className="text-xs text-paper-500">Administrador</p>
               </div>
             </div>
           </div>
@@ -76,6 +85,4 @@ const Header = ({ userName }: HeaderProps) => {
       </div>
     </header>
   );
-};
-
-export default Header;
+}

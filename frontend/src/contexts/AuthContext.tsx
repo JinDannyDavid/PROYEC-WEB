@@ -41,17 +41,15 @@ interface RegisterData {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
-
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  // Registrar callback para expiración de sesión
+  // Registrar callback para expiracion de sesion
   useEffect(() => {
     const unsubscribe = onAuthExpired(() => {
-      console.log('🔴 Sesión expirada, redirigiendo a login');
+      console.log('Sesion expirada, redirigiendo a login');
       clearTokens();
       setUser(null);
       router.push('/login');
@@ -59,9 +57,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return unsubscribe;
   }, [router]);
 
-  // Cargar usuario desde token al iniciar
+  // Cargar usuario desde token al iniciar (solo en cliente)
   useEffect(() => {
     const loadUser = async () => {
+      // Solo ejecutar en cliente
+      if (typeof window === 'undefined') {
+        setLoading(false);
+        return;
+      }
+
       // Intentar obtener token de cookies o localStorage
       let token = null;
       
@@ -75,7 +79,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       }
       
-      // Si no está en cookies, intentar desde localStorage
+      // Si no esta en cookies, intentar desde localStorage
       if (!token) {
         token = localStorage.getItem('access_token');
       }
@@ -99,12 +103,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const userData = response.data.data || response.data;
       setUser(userData);
       
-      // Asegurar que el token también esté en localStorage
-      localStorage.setItem('access_token', token);
+      // Token ya esta en localStorage desde el login, no re-escribir
       
     } catch (error) {
       console.error('Error fetching user:', error);
-      // Si el token es inválido, limpiar todo
+      // Si el token es invalido, limpiar todo
       clearTokens();
       setUser(null);
     } finally {
@@ -128,7 +131,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       setUser(userData);
       
-      // ✅ RETORNAR DATOS PARA QUE EL COMPONENTE MANEJE LA NAVEGACIÓN SPA
+      // Retornar datos para que el componente maneje la navegacion SPA
       return { 
         success: true, 
         user: userData,
@@ -136,22 +139,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       };
     } catch (error: unknown) {
       const axiosError = error as { response?: { data?: { detail?: string } } };
-      console.error('🔴 Login error:', axiosError.response?.data);
+      console.error('Login error:', axiosError.response?.data);
       return {
         success: false,
-        message: axiosError.response?.data?.detail || 'Error al iniciar sesión'
+        message: axiosError.response?.data?.detail || 'Error al iniciar sesion'
       };
     }
   };
 
   const register = async (userData: RegisterData) => {
     try {
-      console.log('🟡 Datos de registro enviados:', userData);
+      console.log('Datos de registro enviados:', userData);
       const response = await api.post('/usuarios/', userData);
       
-      console.log('🟢 Registro exitoso:', response.data);
+      console.log('Registro exitoso:', response.data);
       
-      // Auto-login después de registro exitoso
+      // Auto-login despues de registro: usar credenciales recién creadas
+      // El backend debería devolver el usuario creado, así que intentamos login directo
       const { dni, password } = userData;
       const loginResult = await login(dni, password);
       
@@ -164,9 +168,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         };
       }
       
+      // Fallback: si login falla, intentar obtener perfil con token recién creado
+      // (login ya maneja el almacenamiento de tokens)
       return { 
         success: false, 
-        message: 'Registro exitoso pero error al iniciar sesión automáticamente' 
+        message: 'Registro exitoso pero error al iniciar sesion automaticamente' 
       };
     } catch (error: unknown) {
       const axiosError = error as { response?: { data?: Record<string, unknown> } };

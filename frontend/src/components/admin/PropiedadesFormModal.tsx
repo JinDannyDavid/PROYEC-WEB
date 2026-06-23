@@ -68,7 +68,12 @@ export default function PropiedadFormModal({ isOpen, onClose, onSave, propiedad,
     setError('');
 
     try {
-      await onSave(formData);
+      // Convertir usuario a numero para el backend
+      const payload = {
+        ...formData,
+        usuario: Number(formData.usuario),
+      };
+      await onSave(payload);
       onClose();
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Error al guardar propiedad');

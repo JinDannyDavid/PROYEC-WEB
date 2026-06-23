@@ -1,8 +1,8 @@
-// frontend/src/pages/admin/pagos.tsx
-import Header from '@/components/admin/Header';
+import AdminLayout from '@/components/admin/AdminLayout';
 import PagoDeleteModal from '@/components/admin/PagoDeleteModal';
 import PagoFilters from '@/components/admin/PagoFilters';
 import PagoFormModal from '@/components/admin/PagoFormModal';
+import Header from '@/components/admin/Header';
 import Sidebar from '@/components/admin/Sidebar';
 import { useAuth } from '@/contexts/AuthContext';
 import { adminFacturaService, Factura } from '@/services/adminFacturaService';
@@ -61,15 +61,14 @@ export default function PagosPage() {
     }
   };
 
-  // Aplicar filtros
   useEffect(() => {
     let filtered = [...pagos];
     
     if (searchTerm) {
-      filtered = filtered.filter(p =>
+      filtered = filtered.filter(p => 
+        p.factura_numero?.includes(searchTerm) || 
         p.codigo_operacion.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.factura_numero?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.propiedad_direccion?.toLowerCase().includes(searchTerm.toLowerCase())
+        p.metodo_pago.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
     
@@ -80,7 +79,7 @@ export default function PagosPage() {
     setPagosFiltrados(filtered);
   }, [searchTerm, selectedMetodo, pagos]);
 
-  const handleRegistrarPago = () => {
+  const handleNuevoPago = () => {
     setPagoSeleccionado(null);
     setModoEdicion(false);
     setModalAbierto(true);
@@ -97,7 +96,23 @@ export default function PagosPage() {
     setDeleteModalAbierto(true);
   };
 
-  const handleGuardarPago = async (data: any) => {
+  const confirmarEliminar = async () => {
+    if (!pagoSeleccionado) return;
+    
+    try {
+      await adminPagoService.deletePago(pagoSeleccionado.id);
+      toast.success('Pago eliminado correctamente');
+      cargarDatos();
+    } catch (error) {
+      console.error('Error eliminando pago:', error);
+      toast.error('No se pudo eliminar el pago');
+    } finally {
+      setDeleteModalAbierto(false);
+      setPagoSeleccionado(null);
+    }
+  };
+
+  const guardarPago = async (data: any) => {
     try {
       if (modoEdicion && pagoSeleccionado) {
         await adminPagoService.updatePago(pagoSeleccionado.id, data);
@@ -106,195 +121,141 @@ export default function PagosPage() {
         await adminPagoService.createPago(data);
         toast.success('Pago registrado correctamente');
       }
-      await cargarDatos();
+      cargarDatos();
       setModalAbierto(false);
-    } catch (error: any) {
-      toast.error(error.response?.data?.detail || 'Error al guardar pago');
+    } catch (error) {
+      console.error('Error guardando pago:', error);
+      toast.error('No se pudo guardar el pago');
+      throw error;
     }
   };
-
-  const handleConfirmarEliminacion = async () => {
-    if (pagoSeleccionado) {
-      try {
-        await adminPagoService.deletePago(pagoSeleccionado.id);
-        toast.success('Pago eliminado correctamente');
-        await cargarDatos();
-        setDeleteModalAbierto(false);
-      } catch (error) {
-        toast.error('Error al eliminar pago');
-      }
-    }
-  };
-
-  const handleLogout = () => {
-    logout();
-  };
-
-  const totalPagado = pagosFiltrados.reduce((sum, p) => sum + p.monto, 0);
-  const totalPagos = pagosFiltrados.length;
-  const pagosConfirmados = pagosFiltrados.filter(p => p.estado_comprobante === 'CONFIRMADO').length;
 
   if (authLoading || cargando) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-white text-xl animate-pulse">Cargando pagos...</div>
-      </div>
+      <AdminLayout>
+        <div className="flex items-center justify-center py-12">
+          <div className="text-paper-600">Cargando...</div>
+        </div>
+      </AdminLayout>
     );
   }
 
-  if (!user || user.tipo_usuario !== 'ADMIN') return null;
-
   return (
-    <div className="min-h-screen bg-gray-900">
-      <Sidebar onLogout={handleLogout} />
-      
-      <div className="ml-72">
-        <Header userName={user.nombres} />
-
-        <main className="p-6">
-          {/* Header con título y botón */}
-          <div className="flex justify-between items-center mb-6">
-            <div>
-              <h1 className="text-2xl font-bold text-white">Registro de Pagos</h1>
-              <p className="text-gray-400 text-sm">Administra los pagos registrados</p>
-            </div>
-            <button
-              onClick={handleRegistrarPago}
-              className="flex items-center gap-2 px-4 py-2 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition"
-            >
-              <FaPlus /> Registrar Pago
-            </button>
-          </div>
-
-          {/* Resumen de pagos */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="bg-gray-800 rounded-2xl p-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-400 text-sm">Total Pagado</p>
-                  <p className="text-white text-2xl font-bold">S/ {totalPagado.toFixed(2)}</p>
-                </div>
-                <FaMoneyBillWave className="text-green-500 text-3xl opacity-50" />
-              </div>
-            </div>
-            <div className="bg-gray-800 rounded-2xl p-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-400 text-sm">N° de Pagos</p>
-                  <p className="text-white text-2xl font-bold">{totalPagos}</p>
-                </div>
-                <FaCheckCircle className="text-blue-500 text-3xl opacity-50" />
-              </div>
-            </div>
-            <div className="bg-gray-800 rounded-2xl p-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-400 text-sm">Pagos Confirmados</p>
-                  <p className="text-white text-2xl font-bold">{pagosConfirmados}</p>
-                </div>
-                <FaClock className="text-cyan-500 text-3xl opacity-50" />
-              </div>
-            </div>
-          </div>
-
-          {/* Filtros */}
-          <PagoFilters
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            selectedMetodo={selectedMetodo}
-            onMetodoChange={setSelectedMetodo}
-          />
-
-          {/* Tabla de pagos */}
-          <div className="bg-gray-800 rounded-2xl overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-700/50 border-b border-gray-700">
-                  <tr>
-                    <th className="text-left p-4 text-gray-300 font-semibold">Código</th>
-                    <th className="text-left p-4 text-gray-300 font-semibold">Factura</th>
-                    <th className="text-left p-4 text-gray-300 font-semibold">Propiedad</th>
-                    <th className="text-left p-4 text-gray-300 font-semibold">Monto</th>
-                    <th className="text-left p-4 text-gray-300 font-semibold">Método</th>
-                    <th className="text-left p-4 text-gray-300 font-semibold">Fecha</th>
-                    <th className="text-left p-4 text-gray-300 font-semibold">Estado</th>
-                    <th className="text-left p-4 text-gray-300 font-semibold">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pagosFiltrados.length === 0 ? (
-                    <tr>
-                      <td colSpan={8} className="text-center p-8 text-gray-400">
-                        No hay pagos registrados
-                      </td>
-                    </tr>
-                  ) : (
-                    pagosFiltrados.map((pago) => (
-                      <tr key={pago.id} className="border-b border-gray-700 hover:bg-gray-750 transition">
-                        <td className="p-4 text-white font-mono text-sm">{pago.codigo_operacion}</td>
-                        <td className="p-4 text-white">{pago.factura_numero || `#${pago.factura}`}</td>
-                        <td className="p-4 text-white max-w-xs truncate">
-                          {pago.propiedad_direccion || '-'}
-                        </td>
-                        <td className="p-4 text-white font-semibold">S/ {pago.monto.toFixed(2)}</td>
-                        <td className="p-4">
-                          <span className={`px-2 py-1 rounded-full text-xs ${
-                            pago.metodo_pago === 'YAPE' ? 'bg-green-500/20 text-green-400' :
-                            pago.metodo_pago === 'PLIN' ? 'bg-purple-500/20 text-purple-400' :
-                            pago.metodo_pago === 'TRANSFERENCIA' ? 'bg-blue-500/20 text-blue-400' :
-                            'bg-orange-500/20 text-orange-400'
-                          }`}>
-                            {pago.metodo_pago}
-                          </span>
-                        </td>
-                        <td className="p-4 text-white">
-                          {new Date(pago.fecha_pago).toLocaleDateString('es-PE')}
-                        </td>
-                        <td className="p-4">
-                          <span className={`px-2 py-1 rounded-full text-xs ${
-                            pago.estado_comprobante === 'CONFIRMADO' 
-                              ? 'bg-green-500/20 text-green-400'
-                              : pago.estado_comprobante === 'PENDIENTE'
-                              ? 'bg-yellow-500/20 text-yellow-400'
-                              : 'bg-red-500/20 text-red-400'
-                          }`}>
-                            {pago.estado_comprobante === 'CONFIRMADO' ? 'Confirmado' :
-                             pago.estado_comprobante === 'PENDIENTE' ? 'Pendiente' : 'Rechazado'}
-                          </span>
-                        </td>
-                        <td className="p-4">
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => handleEditarPago(pago)}
-                              className="p-2 hover:bg-gray-700 rounded-lg transition"
-                              title="Editar"
-                            >
-                              <FaEdit className="text-yellow-400" />
-                            </button>
-                            <button
-                              onClick={() => handleEliminarPago(pago)}
-                              className="p-2 hover:bg-gray-700 rounded-lg transition"
-                              title="Eliminar"
-                            >
-                              <FaTrash className="text-red-400" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </main>
+    <AdminLayout>
+      <div className="mb-6 flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-paper-900">Registro de Pagos</h1>
+          <p className="text-paper-600">Registrar pagos realizados por usuarios</p>
+        </div>
+        <button
+          onClick={handleNuevoPago}
+          className="btn-primary flex items-center gap-2"
+        >
+          <FaPlus /> Nuevo Pago
+        </button>
       </div>
 
-      {/* Modales */}
+      <PagoFilters
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        selectedMetodo={selectedMetodo}
+        onMetodoChange={setSelectedMetodo}
+      />
+
+      <div className="card overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="table-base">
+            <thead className="table-header">
+              <tr>
+                <th>Fecha de Pago</th>
+                <th>Factura</th>
+                <th>Monto</th>
+                <th>Método de Pago</th>
+                <th>Código de Operación</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-paper-200">
+              {pagosFiltrados.map((pago) => (
+                <tr key={pago.id} className="table-row">
+                  <td className="text-paper-900">
+                    {new Date(pago.fecha_pago).toLocaleDateString('es-PE')}
+                  </td>
+                  <td className="text-paper-600">{pago.factura_numero || '-'}</td>
+                  <td className="font-semibold text-paper-900">S/ {pago.monto.toFixed(2)}</td>
+                  <td>
+                    <span className={`badge ${
+                      pago.metodo_pago === 'YAPE' ? 'badge-success' :
+                      pago.metodo_pago === 'PLIN' ? 'badge-warning' :
+                      pago.metodo_pago === 'TRANSFERENCIA' ? 'badge-info' :
+                      'badge-primary'
+                    }`}>
+                      {pago.metodo_pago}
+                    </span>
+                  </td>
+                  <td className="font-mono text-xs text-paper-500">{pago.codigo_operacion}</td>
+                  <td>
+                    <span className="badge badge-success">
+                      <FaCheckCircle className="w-3 h-3 mr-1" /> Confirmado
+                    </span>
+                  </td>
+                  <td>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleEditarPago(pago)}
+                        className="p-1 text-paper-600 hover:text-pvc-blue transition-colors"
+                        title="Editar"
+                      >
+                        <FaEdit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleEliminarPago(pago)}
+                        className="p-1 text-paper-600 hover:text-stamp-red transition-colors"
+                        title="Eliminar"
+                      >
+                        <FaTrash className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {pagosFiltrados.length === 0 && (
+          <div className="p-12 text-center">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-paper-200 flex items-center justify-center">
+              <svg className="w-8 h-8 text-paper-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold text-paper-900 mb-2">No hay pagos</h3>
+            <p className="text-paper-500">
+              {searchTerm || selectedMetodo !== 'todos'
+                ? 'No se encontraron pagos con los filtros seleccionados.'
+                : 'No hay pagos registrados en el sistema.'}
+            </p>
+            {(searchTerm || selectedMetodo !== 'todos') && (
+              <button
+                onClick={() => {
+                  setSearchTerm('');
+                  setSelectedMetodo('todos');
+                }}
+                className="btn-primary mt-4"
+              >
+                Limpiar filtros
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
       <PagoFormModal
         isOpen={modalAbierto}
         onClose={() => setModalAbierto(false)}
-        onSave={handleGuardarPago}
+        onSave={guardarPago}
         pago={pagoSeleccionado}
         isEditing={modoEdicion}
         facturas={facturas}
@@ -303,9 +264,9 @@ export default function PagosPage() {
       <PagoDeleteModal
         isOpen={deleteModalAbierto}
         onClose={() => setDeleteModalAbierto(false)}
-        onConfirm={handleConfirmarEliminacion}
+        onConfirm={confirmarEliminar}
         pago={pagoSeleccionado}
       />
-    </div>
+    </AdminLayout>
   );
 }

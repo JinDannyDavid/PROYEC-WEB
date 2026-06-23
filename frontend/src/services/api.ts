@@ -10,28 +10,120 @@ export const api = axios.create({
   },
 });
 
-// Cache del token en memoria para evitar leer localStorage en cada request
-let accessTokenCache: string | null = null;
-let refreshTokenCache: string | null = null;
+// Singleton token manager to avoid race conditions
+class TokenManager {
+  private accessToken: string | null = null;
+  private refreshToken: string | null = null;
+  private initialized = false;
+  private initPromise: Promise<void> | null = null;
+
+  private async initialize(): Promise<void> {
+    if (typeof window === 'undefined') return;
+    if (this.initialized) return;
+    if (this.initPromise) return this.initPromise;
+
+    this.initPromise = (async () => {
+      try {
+        const cookies = document.cookie.split(';');
+        for (const cookie of cookies) {
+          const [name, value] = cookie.trim().split('=');
+          if (name === 'access_token') {
+            this.accessToken = value;
+            break;
+          }
+        }
+        if (!this.accessToken) {
+          this.accessToken = localStorage.getItem('access_token');
+        }
+        this.refreshToken = localStorage.getItem('refresh_token');
+      } finally {
+        this.initialized = true;
+      }
+    })();
+
+    await this.initPromise;
+  }
+
+  async getTokens(): Promise<{ access: string | null; refresh: string | null }> {
+    await this.initialize();
+    return { access: this.accessToken, refresh: this.refreshToken };
+  }
+
+  setTokens(access: string, refresh: string): void {
+    this.accessToken = access;
+    this.refreshToken = refresh;
+    localStorage.setItem('access_token', access);
+    localStorage.setItem('refresh_token', refresh);
+    document.cookie = `access_token=${access}; path=/; max-age=86400`;
+    document.cookie = `refresh_token=${refresh}; path=/; max-age=604800`;
+  }
+
+  clearTokens(): void {
+    this.accessToken = null;
+    this.refreshToken = null;
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    document.cookie = 'access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    document.cookie = 'refresh_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+  }
+}
+
+// Singleton instance
+const tokenManager = new TokenManager();
+
+// Callbacks para notificar expiracion de sesion
+type AuthExpiredCallback = () => void;
+const authExpiredCallbacks: Set<AuthExpiredCallback> = new Set();
+
+export function onAuthExpired(callback: AuthExpiredCallback): () => void {
+  authExpiredCallbacks.add(callback);
+  return () => {
+    authExpiredCallbacks.delete(callback);
+  };
+}
+
+function notifyAuthExpired(): void {
+  authExpiredCallbacks.forEach(cb => cb());
+}
+
+// Crear instancia axios dedicada para refresh (sin interceptores para evitar loop)
+const refreshApi = axios.create({
+  baseURL: API_URL,
+  headers: { 'Content-Type': 'application/json' },
+});
+
+async function refreshAccessToken(): Promise<string> {
+  const { refresh } = await tokenManager.getTokens();
+  if (!refresh) throw new Error('No refresh token available');
+  
+  try {
+    const response = await refreshApi.post('/token/refresh/', { refresh });
+    const { access, refresh: newRefresh } = response.data;
+    tokenManager.setTokens(access, newRefresh || refresh);
+    return access;
+  } catch (error) {
+    tokenManager.clearTokens();
+    throw error;
+  }
+}
+
+// Interceptor para agregar el token
+api.interceptors.request.use(async (config) => {
+  const { access } = await tokenManager.getTokens();
+  if (access) {
+    config.headers.Authorization = `Bearer ${access}`;
+  }
+  return config;
+});
+
+// Interceptor para manejar 401 y refresh token
 let isRefreshing = false;
 let failedQueue: Array<{
   resolve: (token: string) => void;
   reject: (error: Error) => void;
 }> = [];
 
-// Callbacks para notificar expiración de sesión (evita window.location.href)
-type AuthExpiredCallback = () => void;
-const authExpiredCallbacks: AuthExpiredCallback[] = [];
-
-export function onAuthExpired(callback: AuthExpiredCallback) {
-  authExpiredCallbacks.push(callback);
-}
-
-function notifyAuthExpired() {
-  authExpiredCallbacks.forEach(cb => cb());
-}
-
-function processQueue(error: Error | null, token: string | null = null) {
+function processQueue(error: Error | null, token: string | null = null): void {
   failedQueue.forEach(prom => {
     if (error) {
       prom.reject(error);
@@ -42,67 +134,6 @@ function processQueue(error: Error | null, token: string | null = null) {
   failedQueue = [];
 }
 
-function getTokens(): { access: string | null; refresh: string | null } {
-  if (typeof window === 'undefined') return { access: null, refresh: null };
-  
-  if (!accessTokenCache) {
-    accessTokenCache = localStorage.getItem('access_token');
-  }
-  if (!refreshTokenCache) {
-    refreshTokenCache = localStorage.getItem('refresh_token');
-  }
-  return { access: accessTokenCache, refresh: refreshTokenCache };
-}
-
-function setTokens(access: string, refresh: string) {
-  accessTokenCache = access;
-  refreshTokenCache = refresh;
-  localStorage.setItem('access_token', access);
-  localStorage.setItem('refresh_token', refresh);
-  document.cookie = `access_token=${access}; path=/; max-age=86400`;
-  document.cookie = `refresh_token=${refresh}; path=/; max-age=604800`;
-}
-
-function clearTokens() {
-  accessTokenCache = null;
-  refreshTokenCache = null;
-  localStorage.removeItem('access_token');
-  localStorage.removeItem('refresh_token');
-  document.cookie = 'access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-  document.cookie = 'refresh_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-}
-
-// Crear instancia axios dedicada para refresh (sin interceptores para evitar loop)
-const refreshApi = axios.create({
-  baseURL: API_URL,
-  headers: { 'Content-Type': 'application/json' },
-});
-
-async function refreshAccessToken(): Promise<string> {
-  const { refresh } = getTokens();
-  if (!refresh) throw new Error('No refresh token available');
-  
-  try {
-    const response = await refreshApi.post('/token/refresh/', { refresh });
-    const { access, refresh: newRefresh } = response.data;
-    setTokens(access, newRefresh || refresh);
-    return access;
-  } catch (error) {
-    clearTokens();
-    throw error;
-  }
-}
-
-// Interceptor para agregar el token
-api.interceptors.request.use((config) => {
-  const { access } = getTokens();
-  if (access) {
-    config.headers.Authorization = `Bearer ${access}`;
-  }
-  return config;
-});
-
-// Interceptor para manejar 401 y refresh token
 api.interceptors.response.use(
   response => response,
   async (error) => {
@@ -110,15 +141,24 @@ api.interceptors.response.use(
     
     if (error.response?.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
-        // Esperar a que termine el refresh en curso
+        // Esperar a que termine el refresh en curso con timeout
         return new Promise((resolve, reject) => {
-          failedQueue.push({ resolve, reject });
-        })
-          .then(token => {
-            originalRequest.headers.Authorization = `Bearer ${token}`;
-            return api(originalRequest);
-          })
-          .catch(err => Promise.reject(err));
+          const timeout = setTimeout(() => {
+            reject(new Error('Refresh timeout'));
+          }, 10000);
+          
+          failedQueue.push({ 
+            resolve: (token: string) => {
+              clearTimeout(timeout);
+              originalRequest.headers.Authorization = `Bearer ${token}`;
+              resolve(api(originalRequest));
+            },
+            reject: (err: Error) => {
+              clearTimeout(timeout);
+              reject(err);
+            }
+          });
+        });
       }
       
       originalRequest._retry = true;
@@ -132,7 +172,7 @@ api.interceptors.response.use(
       } catch (err) {
         const error = err instanceof Error ? err : new Error('Error desconocido');
         processQueue(error, null);
-        // Notificar expiración de sesión (en lugar de window.location.href)
+        // Notificar expiracion de sesion
         if (typeof window !== 'undefined') {
           notifyAuthExpired();
         }
@@ -146,4 +186,9 @@ api.interceptors.response.use(
   }
 );
 
-export { clearTokens, setTokens, getTokens };
+export { tokenManager };
+
+// Exportar funciones compatibles
+export const clearTokens = () => tokenManager.clearTokens();
+export const setTokens = (access: string, refresh: string) => tokenManager.setTokens(access, refresh);
+export const getTokens = () => tokenManager.getTokens();

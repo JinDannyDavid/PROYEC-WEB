@@ -1,5 +1,4 @@
-// frontend/src/pages/admin/propiedades.tsx
-import Header from '@/components/admin/Header';
+import AdminLayout from '@/components/admin/AdminLayout';
 import PropiedadDeleteModal from '@/components/admin/PropiedadDeleteModal';
 import PropiedadFilters from '@/components/admin/PropiedadFilters';
 import PropiedadFormModal from '@/components/admin/PropiedadesFormModal';
@@ -11,6 +10,14 @@ import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { FaEdit, FaPlus, FaTrash } from 'react-icons/fa';
+
+const estadoOptions = [
+  { value: 'todos', label: 'Todos los estados' },
+  { value: 'ACTIVO', label: 'Activo', color: 'green' },
+  { value: 'CORTADO', label: 'Cortado', color: 'red' },
+  { value: 'MOROSO', label: 'Moroso', color: 'orange' },
+  { value: 'SUSPENDIDO', label: 'Suspendido', color: 'gray' },
+];
 
 export default function PropiedadesPage() {
   const { user, isAuthenticated, loading: authLoading, logout } = useAuth();
@@ -61,13 +68,12 @@ export default function PropiedadesPage() {
     }
   };
 
-  // Aplicar filtros
   useEffect(() => {
     let filtered = [...propiedades];
     
     if (searchTerm) {
-      filtered = filtered.filter(p =>
-        p.numero_medidor.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      filtered = filtered.filter(p => 
+        p.numero_medidor.includes(searchTerm) || 
         p.direccion.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (p.usuario_nombre && p.usuario_nombre.toLowerCase().includes(searchTerm.toLowerCase()))
       );
@@ -80,7 +86,7 @@ export default function PropiedadesPage() {
     setPropiedadesFiltradas(filtered);
   }, [searchTerm, selectedEstado, propiedades]);
 
-  const handleCrearPropiedad = () => {
+  const handleNuevaPropiedad = () => {
     setPropiedadSeleccionada(null);
     setModoEdicion(false);
     setModalAbierto(true);
@@ -97,7 +103,23 @@ export default function PropiedadesPage() {
     setDeleteModalAbierto(true);
   };
 
-  const handleGuardarPropiedad = async (data: any) => {
+  const confirmarEliminar = async () => {
+    if (!propiedadSeleccionada) return;
+    
+    try {
+      await adminPropiedadService.deletePropiedad(propiedadSeleccionada.id);
+      toast.success('Propiedad eliminada correctamente');
+      cargarDatos();
+    } catch (error) {
+      console.error('Error eliminando propiedad:', error);
+      toast.error('No se pudo eliminar la propiedad');
+    } finally {
+      setDeleteModalAbierto(false);
+      setPropiedadSeleccionada(null);
+    }
+  };
+
+  const guardarPropiedad = async (data: any) => {
     try {
       if (modoEdicion && propiedadSeleccionada) {
         await adminPropiedadService.updatePropiedad(propiedadSeleccionada.id, data);
@@ -106,165 +128,134 @@ export default function PropiedadesPage() {
         await adminPropiedadService.createPropiedad(data);
         toast.success('Propiedad creada correctamente');
       }
-      await cargarDatos();
+      cargarDatos();
       setModalAbierto(false);
-    } catch (error: any) {
-      toast.error(error.response?.data?.detail || 'Error al guardar propiedad');
+    } catch (error) {
+      console.error('Error guardando propiedad:', error);
+      toast.error('No se pudo guardar la propiedad');
+      throw error;
     }
-  };
-
-  const handleConfirmarEliminacion = async () => {
-    if (propiedadSeleccionada) {
-      try {
-        await adminPropiedadService.deletePropiedad(propiedadSeleccionada.id);
-        toast.success('Propiedad eliminada correctamente');
-        await cargarDatos();
-        setDeleteModalAbierto(false);
-      } catch (error) {
-        toast.error('Error al eliminar propiedad');
-      }
-    }
-  };
-
-  const handleLogout = () => {
-    logout();
   };
 
   if (authLoading || cargando) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-white text-xl animate-pulse">Cargando propiedades...</div>
-      </div>
+      <AdminLayout>
+        <div className="flex items-center justify-center py-12">
+          <div className="text-paper-600">Cargando...</div>
+        </div>
+      </AdminLayout>
     );
   }
 
-  if (!user || user.tipo_usuario !== 'ADMIN') return null;
-
-  const estadoOptions = [
-    { value: 'todos', label: 'Todos' },
-    { value: 'ACTIVO', label: 'Activo', color: 'green' },
-    { value: 'CORTADO', label: 'Cortado', color: 'red' },
-    { value: 'MOROSO', label: 'Moroso', color: 'orange' },
-    { value: 'SUSPENDIDO', label: 'Suspendido', color: 'gray' },
-  ];
-
   return (
-    <div className="min-h-screen bg-gray-900">
-      <Sidebar onLogout={handleLogout} />
-      
-      <div className="ml-72">
-        <Header userName={user.nombres} />
-
-        <main className="p-6">
-          {/* Header con título y botón */}
-          <div className="flex justify-between items-center mb-6">
-            <div>
-              <h1 className="text-2xl font-bold text-white">Gestión de Propiedades</h1>
-              <p className="text-gray-400 text-sm">Administra las propiedades registradas</p>
-            </div>
-            <button
-              onClick={handleCrearPropiedad}
-              className="flex items-center gap-2 px-4 py-2 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition"
-            >
-              <FaPlus /> Nueva Propiedad
-            </button>
-          </div>
-
-          {/* Filtros */}
-          <PropiedadFilters
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            selectedEstado={selectedEstado}
-            onEstadoChange={setSelectedEstado}
-            estadoOptions={estadoOptions}
-          />
-
-          {/* Tabla de propiedades */}
-          <div className="bg-gray-800 rounded-2xl overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-700/50 border-b border-gray-700">
-                  <tr>
-                    <th className="text-left p-4 text-gray-300 font-semibold">ID</th>
-                    <th className="text-left p-4 text-gray-300 font-semibold">Medidor</th>
-                    <th className="text-left p-4 text-gray-300 font-semibold">Dirección</th>
-                    <th className="text-left p-4 text-gray-300 font-semibold">Sector</th>
-                    <th className="text-left p-4 text-gray-300 font-semibold">Propietario</th>
-                    <th className="text-left p-4 text-gray-300 font-semibold">Tipo</th>
-                    <th className="text-left p-4 text-gray-300 font-semibold">Estado</th>
-                    <th className="text-left p-4 text-gray-300 font-semibold">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {propiedadesFiltradas.length === 0 ? (
-                    <tr>
-                      <td colSpan={8} className="text-center p-8 text-gray-400">
-                        No hay propiedades registradas
-                      </td>
-                    </tr>
-                  ) : (
-                    propiedadesFiltradas.map((propiedad) => (
-                      <tr key={propiedad.id} className="border-b border-gray-700 hover:bg-gray-750 transition">
-                        <td className="p-4 text-white">{propiedad.id}</td>
-                        <td className="p-4 text-white font-mono">{propiedad.numero_medidor}</td>
-                        <td className="p-4 text-white max-w-xs truncate">{propiedad.direccion}</td>
-                        <td className="p-4 text-white">{propiedad.sector}</td>
-                        <td className="p-4 text-white">
-                          {propiedad.usuario_nombre || `Usuario #${propiedad.usuario}`}
-                        </td>
-                        <td className="p-4">
-                          <span className="px-2 py-1 rounded-full text-xs bg-blue-500/20 text-blue-400">
-                            {propiedad.tipo_propiedad === 'DOMESTICO' ? 'Doméstico' :
-                             propiedad.tipo_propiedad === 'COMERCIAL' ? 'Comercial' :
-                             propiedad.tipo_propiedad === 'INDUSTRIAL' ? 'Industrial' :
-                             propiedad.tipo_propiedad}
-                          </span>
-                        </td>
-                        <td className="p-4">
-                          <span className={`px-2 py-1 rounded-full text-xs ${
-                            propiedad.estado === 'ACTIVO' ? 'bg-green-500/20 text-green-400' :
-                            propiedad.estado === 'CORTADO' ? 'bg-red-500/20 text-red-400' :
-                            propiedad.estado === 'MOROSO' ? 'bg-orange-500/20 text-orange-400' :
-                            'bg-gray-500/20 text-gray-400'
-                          }`}>
-                            {propiedad.estado === 'ACTIVO' ? 'Activo' :
-                             propiedad.estado === 'CORTADO' ? 'Cortado' :
-                             propiedad.estado === 'MOROSO' ? 'Moroso' : 'Suspendido'}
-                          </span>
-                        </td>
-                        <td className="p-4">
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => handleEditarPropiedad(propiedad)}
-                              className="p-2 hover:bg-gray-700 rounded-lg transition"
-                              title="Editar"
-                            >
-                              <FaEdit className="text-yellow-400" />
-                            </button>
-                            <button
-                              onClick={() => handleEliminarPropiedad(propiedad)}
-                              className="p-2 hover:bg-gray-700 rounded-lg transition"
-                              title="Eliminar"
-                            >
-                              <FaTrash className="text-red-400" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </main>
+    <AdminLayout>
+      <div className="mb-6 flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-paper-900">Gestion de Propiedades</h1>
+          <p className="text-paper-600">Administrar propiedades y numeros de medidor</p>
+        </div>
+        <button
+          onClick={handleNuevaPropiedad}
+          className="btn-primary flex items-center gap-2"
+        >
+          <FaPlus /> Nueva Propiedad
+        </button>
       </div>
 
-      {/* Modales */}
+      <PropiedadFilters
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        selectedEstado={selectedEstado}
+        onEstadoChange={setSelectedEstado}
+        estadoOptions={estadoOptions}
+      />
+
+      <div className="card overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="table-base">
+            <thead className="table-header">
+              <tr>
+                <th>Numero de Medidor</th>
+                <th>Direccion</th>
+                <th>Propietario</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-paper-200">
+              {propiedadesFiltradas.map((propiedad) => (
+                <tr key={propiedad.id} className="table-row">
+                  <td className="font-mono font-medium text-pvc-blue">{propiedad.numero_medidor}</td>
+                  <td className="text-paper-900">{propiedad.direccion}</td>
+                  <td className="text-paper-600">
+                    {propiedad.usuario_nombre}
+                  </td>
+                  <td>
+                    <span className={`badge ${
+                      propiedad.estado === 'ACTIVO' ? 'badge-success' :
+                      propiedad.estado === 'CORTADO' ? 'badge-danger' :
+                      propiedad.estado === 'MOROSO' ? 'badge-warning' :
+                      'badge-info'
+                    }`}>
+                      {propiedad.estado}
+                    </span>
+                  </td>
+                  <td>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleEditarPropiedad(propiedad)}
+                        className="p-1 text-paper-600 hover:text-pvc-blue transition-colors"
+                        title="Editar"
+                      >
+                        <FaEdit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleEliminarPropiedad(propiedad)}
+                        className="p-1 text-paper-600 hover:text-stamp-red transition-colors"
+                        title="Eliminar"
+                      >
+                        <FaTrash className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {propiedadesFiltradas.length === 0 && (
+          <div className="p-12 text-center">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-paper-200 flex items-center justify-center">
+              <svg className="w-8 h-8 text-paper-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold text-paper-900 mb-2">No hay propiedades</h3>
+            <p className="text-paper-500">
+              {searchTerm || selectedEstado !== 'todos'
+                ? 'No se encontraron propiedades con los filtros seleccionados.'
+                : 'No hay propiedades registradas en el sistema.'}
+            </p>
+            {(searchTerm || selectedEstado !== 'todos') && (
+              <button
+                onClick={() => {
+                  setSearchTerm('');
+                  setSelectedEstado('todos');
+                }}
+                className="btn-primary mt-4"
+              >
+                Limpiar filtros
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
       <PropiedadFormModal
         isOpen={modalAbierto}
         onClose={() => setModalAbierto(false)}
-        onSave={handleGuardarPropiedad}
+        onSave={guardarPropiedad}
         propiedad={propiedadSeleccionada}
         isEditing={modoEdicion}
         usuarios={usuarios}
@@ -273,9 +264,9 @@ export default function PropiedadesPage() {
       <PropiedadDeleteModal
         isOpen={deleteModalAbierto}
         onClose={() => setDeleteModalAbierto(false)}
-        onConfirm={handleConfirmarEliminacion}
+        onConfirm={confirmarEliminar}
         propiedad={propiedadSeleccionada}
       />
-    </div>
+    </AdminLayout>
   );
 }

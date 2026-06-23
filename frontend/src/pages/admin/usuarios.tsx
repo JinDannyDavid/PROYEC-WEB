@@ -1,6 +1,4 @@
-// frontend/src/pages/admin/usuarios.tsx
-import Header from '@/components/admin/Header';
-import Sidebar from '@/components/admin/Sidebar';
+import AdminLayout from '@/components/admin/AdminLayout';
 import UsuarioDeleteModal from '@/components/admin/UsuarioDeleteModal';
 import UsuarioFilters from '@/components/admin/UsuarioFilters';
 import UsuarioFormModal from '@/components/admin/UsuarioFormModal';
@@ -55,14 +53,13 @@ export default function UsuariosPage() {
     }
   };
 
-  // Aplicar filtros
   useEffect(() => {
     let filtered = [...usuarios];
     
     if (searchTerm) {
-      filtered = filtered.filter(u =>
-        u.dni.includes(searchTerm) ||
-        u.nombres.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      filtered = filtered.filter(u => 
+        u.dni.includes(searchTerm) || 
+        u.nombres.toLowerCase().includes(searchTerm.toLowerCase()) || 
         u.apellidos.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
@@ -74,7 +71,7 @@ export default function UsuariosPage() {
     setUsuariosFiltrados(filtered);
   }, [searchTerm, selectedTipo, usuarios]);
 
-  const handleCrearUsuario = () => {
+  const handleNuevoUsuario = () => {
     setUsuarioSeleccionado(null);
     setModoEdicion(false);
     setModalAbierto(true);
@@ -91,7 +88,23 @@ export default function UsuariosPage() {
     setDeleteModalAbierto(true);
   };
 
-  const handleGuardarUsuario = async (data: any) => {
+  const confirmarEliminar = async () => {
+    if (!usuarioSeleccionado) return;
+    
+    try {
+      await adminUserService.deleteUsuario(usuarioSeleccionado.id);
+      toast.success('Usuario eliminado correctamente');
+      cargarUsuarios();
+    } catch (error) {
+      console.error('Error eliminando usuario:', error);
+      toast.error('No se pudo eliminar el usuario');
+    } finally {
+      setDeleteModalAbierto(false);
+      setUsuarioSeleccionado(null);
+    }
+  };
+
+  const guardarUsuario = async (data: any) => {
     try {
       if (modoEdicion && usuarioSeleccionado) {
         await adminUserService.updateUsuario(usuarioSeleccionado.id, data);
@@ -100,156 +113,137 @@ export default function UsuariosPage() {
         await adminUserService.createUsuario(data);
         toast.success('Usuario creado correctamente');
       }
-      await cargarUsuarios();
+      cargarUsuarios();
       setModalAbierto(false);
-    } catch (error: any) {
-      toast.error(error.response?.data?.detail || 'Error al guardar usuario');
+    } catch (error) {
+      console.error('Error guardando usuario:', error);
+      toast.error('No se pudo guardar el usuario');
+      throw error;
     }
-  };
-
-  const handleConfirmarEliminacion = async () => {
-    if (usuarioSeleccionado) {
-      try {
-        await adminUserService.deleteUsuario(usuarioSeleccionado.id);
-        toast.success('Usuario eliminado correctamente');
-        await cargarUsuarios();
-        setDeleteModalAbierto(false);
-      } catch (error) {
-        toast.error('Error al eliminar usuario');
-      }
-    }
-  };
-
-  const handleLogout = () => {
-    logout();
   };
 
   if (authLoading || cargando) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-white text-xl animate-pulse">Cargando usuarios...</div>
-      </div>
+      <AdminLayout>
+        <div className="flex items-center justify-center py-12">
+          <div className="text-paper-600">Cargando...</div>
+        </div>
+      </AdminLayout>
     );
   }
 
-  if (!user || user.tipo_usuario !== 'ADMIN') return null;
-
   return (
-    <div className="min-h-screen bg-gray-900">
-      <Sidebar onLogout={handleLogout} />
-      
-      <div className="ml-72">
-        <Header userName={user.nombres} />
-
-        <main className="p-6">
-          {/* Header con título y botón */}
-          <div className="flex justify-between items-center mb-6">
-            <div>
-              <h1 className="text-2xl font-bold text-white">Gestión de Usuarios</h1>
-              <p className="text-gray-400 text-sm">Administra los usuarios del sistema</p>
-            </div>
-            <button
-              onClick={handleCrearUsuario}
-              className="flex items-center gap-2 px-4 py-2 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition"
-            >
-              <FaPlus /> Nuevo Usuario
-            </button>
-          </div>
-
-          {/* Filtros */}
-          <UsuarioFilters
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            selectedTipo={selectedTipo}
-            onTipoChange={setSelectedTipo}
-          />
-
-          {/* Tabla de usuarios */}
-          <div className="bg-gray-800 rounded-2xl overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-700/50 border-b border-gray-700">
-                  <tr>
-                    <th className="text-left p-4 text-gray-300 font-semibold">ID</th>
-                    <th className="text-left p-4 text-gray-300 font-semibold">DNI</th>
-                    <th className="text-left p-4 text-gray-300 font-semibold">Nombre</th>
-                    <th className="text-left p-4 text-gray-300 font-semibold">Teléfono</th>
-                    <th className="text-left p-4 text-gray-300 font-semibold">Tipo</th>
-                    <th className="text-left p-4 text-gray-300 font-semibold">Estado</th>
-                    <th className="text-left p-4 text-gray-300 font-semibold">Propiedades</th>
-                    <th className="text-left p-4 text-gray-300 font-semibold">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {usuariosFiltrados.length === 0 ? (
-                    <tr>
-                      <td colSpan={8} className="text-center p-8 text-gray-400">
-                        No hay usuarios registrados
-                      </td>
-                    </tr>
-                  ) : (
-                    usuariosFiltrados.map((usuario) => (
-                      <tr key={usuario.id} className="border-b border-gray-700 hover:bg-gray-750 transition">
-                        <td className="p-4 text-white">{usuario.id}</td>
-                        <td className="p-4 text-white font-mono">{usuario.dni}</td>
-                        <td className="p-4 text-white">{usuario.nombres} {usuario.apellidos}</td>
-                        <td className="p-4 text-white">{usuario.telefono}</td>
-                        <td className="p-4">
-                          <span className={`px-2 py-1 rounded-full text-xs ${
-                            usuario.tipo_usuario === 'ADMIN' 
-                              ? 'bg-purple-500/20 text-purple-400'
-                              : usuario.tipo_usuario === 'VECINO'
-                              ? 'bg-green-500/20 text-green-400'
-                              : 'bg-gray-500/20 text-gray-400'
-                          }`}>
-                            {usuario.tipo_usuario === 'ADMIN' ? 'Administrador' : 
-                             usuario.tipo_usuario === 'VECINO' ? 'Vecino' : 
-                             usuario.tipo_usuario}
-                          </span>
-                        </td>
-                        <td className="p-4">
-                          <span className={`px-2 py-1 rounded-full text-xs ${
-                            usuario.activo
-                              ? 'bg-green-500/20 text-green-400'
-                              : 'bg-red-500/20 text-red-400'
-                          }`}>
-                            {usuario.activo ? 'Activo' : 'Inactivo'}
-                          </span>
-                        </td>
-                        <td className="p-4 text-white">{usuario.propiedades_count || 0}</td>
-                        <td className="p-4">
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => handleEditarUsuario(usuario)}
-                              className="p-2 hover:bg-gray-700 rounded-lg transition"
-                              title="Editar"
-                            >
-                              <FaEdit className="text-yellow-400" />
-                            </button>
-                            <button
-                              onClick={() => handleEliminarUsuario(usuario)}
-                              className="p-2 hover:bg-gray-700 rounded-lg transition"
-                              title="Eliminar"
-                            >
-                              <FaTrash className="text-red-400" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </main>
+    <AdminLayout>
+      <div className="mb-6 flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-paper-900">Gestion de Usuarios</h1>
+          <p className="text-paper-600">Administrar usuarios del sistema</p>
+        </div>
+        <button
+          onClick={handleNuevoUsuario}
+          className="btn-primary flex items-center gap-2"
+        >
+          <FaPlus /> Nuevo Usuario
+        </button>
       </div>
 
-      {/* Modales */}
+      <UsuarioFilters
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        selectedTipo={selectedTipo}
+        onTipoChange={setSelectedTipo}
+      />
+
+      <div className="card overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="table-base">
+            <thead className="table-header">
+              <tr>
+                <th>DNI</th>
+                <th>Nombre Completo</th>
+                <th>Telefono</th>
+                <th>Email</th>
+                <th>Sector</th>
+                <th>Tipo</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-paper-200">
+              {usuariosFiltrados.map((usuario) => (
+                <tr key={usuario.id} className="table-row">
+                  <td className="font-mono">{usuario.dni}</td>
+                  <td className="font-medium text-paper-900">
+                    {usuario.nombres} {usuario.apellidos}
+                  </td>
+                  <td className="text-paper-600">{usuario.telefono}</td>
+                  <td className="text-paper-600">{usuario.email || '-'}</td>
+                  <td className="text-paper-600">{usuario.sector}</td>
+                  <td>
+                    <span className={`badge ${
+                      usuario.tipo_usuario === 'ADMIN' ? 'badge-info' :
+                      usuario.tipo_usuario === 'CAJERO' ? 'badge-success' :
+                      usuario.tipo_usuario === 'TECNICO' ? 'badge-warning' :
+                      'badge-primary'
+                    }`}>
+                      {usuario.tipo_usuario}
+                    </span>
+                  </td>
+                  <td>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleEditarUsuario(usuario)}
+                        className="p-1 text-paper-600 hover:text-pvc-blue transition-colors"
+                        title="Editar"
+                      >
+                        <FaEdit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleEliminarUsuario(usuario)}
+                        className="p-1 text-paper-600 hover:text-stamp-red transition-colors"
+                        title="Eliminar"
+                      >
+                        <FaTrash className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {usuariosFiltrados.length === 0 && (
+          <div className="p-12 text-center">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-paper-200 flex items-center justify-center">
+              <svg className="w-8 h-8 text-paper-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold text-paper-900 mb-2">No hay usuarios</h3>
+            <p className="text-paper-500">
+              {searchTerm || selectedTipo !== 'todos'
+                ? 'No se encontraron usuarios con los filtros seleccionados.'
+                : 'No hay usuarios registrados en el sistema.'}
+            </p>
+            {(searchTerm || selectedTipo !== 'todos') && (
+              <button
+                onClick={() => {
+                  setSearchTerm('');
+                  setSelectedTipo('todos');
+                }}
+                className="btn-primary mt-4"
+              >
+                Limpiar filtros
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
       <UsuarioFormModal
         isOpen={modalAbierto}
         onClose={() => setModalAbierto(false)}
-        onSave={handleGuardarUsuario}
+        onSave={guardarUsuario}
         usuario={usuarioSeleccionado}
         isEditing={modoEdicion}
       />
@@ -257,9 +251,9 @@ export default function UsuariosPage() {
       <UsuarioDeleteModal
         isOpen={deleteModalAbierto}
         onClose={() => setDeleteModalAbierto(false)}
-        onConfirm={handleConfirmarEliminacion}
+        onConfirm={confirmarEliminar}
         usuario={usuarioSeleccionado}
       />
-    </div>
+    </AdminLayout>
   );
 }

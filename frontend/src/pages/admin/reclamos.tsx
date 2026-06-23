@@ -1,5 +1,4 @@
-// frontend/src/pages/admin/reclamos.tsx
-import Header from '@/components/admin/Header';
+import AdminLayout from '@/components/admin/AdminLayout';
 import ReclamoDeleteModal from '@/components/admin/ReclamoDeleteModal';
 import ReclamoDetailModal from '@/components/admin/ReclamoDetailModal';
 import ReclamoFilters from '@/components/admin/ReclamoFilters';
@@ -55,16 +54,26 @@ export default function ReclamosPage() {
     }
   };
 
-  // Aplicar filtros
+  const handleResponderReclamo = async (id: number, estado: string, respuesta: string) => {
+    try {
+      await adminReclamoService.updateReclamo(id, { estado, respuesta });
+      toast.success('Reclamo actualizado correctamente');
+      cargarReclamos();
+    } catch (error) {
+      console.error('Error actualizando reclamo:', error);
+      toast.error('No se pudo actualizar el reclamo');
+      throw error;
+    }
+  };
+
   useEffect(() => {
     let filtered = [...reclamos];
     
     if (searchTerm) {
-      filtered = filtered.filter(r =>
-        r.usuario_nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        r.usuario_dni?.includes(searchTerm) ||
-        r.propiedad_direccion?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        r.descripcion.toLowerCase().includes(searchTerm.toLowerCase())
+      filtered = filtered.filter(r => 
+        r.id.toString().includes(searchTerm) || 
+        r.descripcion.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        r.tipo.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
     
@@ -89,196 +98,172 @@ export default function ReclamosPage() {
     setDeleteModalAbierto(true);
   };
 
-  const handleResponderReclamo = async (id: number, estado: string, respuesta: string) => {
+  const confirmarEliminar = async () => {
+    if (!reclamoSeleccionado) return;
+    
     try {
-      await adminReclamoService.updateReclamo(id, { estado, respuesta });
-      toast.success('Reclamo actualizado correctamente');
-      await cargarReclamos();
-      setDetailModalAbierto(false);
+      await adminReclamoService.deleteReclamo(reclamoSeleccionado.id);
+      toast.success('Reclamo eliminado correctamente');
+      cargarReclamos();
     } catch (error) {
-      toast.error('Error al actualizar reclamo');
+      console.error('Error eliminando reclamo:', error);
+      toast.error('No se pudo eliminar el reclamo');
+    } finally {
+      setDeleteModalAbierto(false);
+      setReclamoSeleccionado(null);
     }
-  };
-
-  const handleConfirmarEliminacion = async () => {
-    if (reclamoSeleccionado) {
-      try {
-        await adminReclamoService.deleteReclamo(reclamoSeleccionado.id);
-        toast.success('Reclamo eliminado correctamente');
-        await cargarReclamos();
-        setDeleteModalAbierto(false);
-      } catch (error) {
-        toast.error('Error al eliminar reclamo');
-      }
-    }
-  };
-
-  const handleLogout = () => {
-    logout();
-  };
-
-  const stats = {
-    total: reclamos.length,
-    pendientes: reclamos.filter(r => r.estado === 'PENDIENTE').length,
-    enProceso: reclamos.filter(r => r.estado === 'EN_PROCESO').length,
-    resueltos: reclamos.filter(r => r.estado === 'RESUELTO').length,
-    rechazados: reclamos.filter(r => r.estado === 'RECHAZADO').length,
   };
 
   if (authLoading || cargando) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-white text-xl animate-pulse">Cargando reclamos...</div>
-      </div>
+      <AdminLayout>
+        <div className="flex items-center justify-center py-12">
+          <div className="text-paper-600">Cargando...</div>
+        </div>
+      </AdminLayout>
     );
   }
 
-  if (!user || user.tipo_usuario !== 'ADMIN') return null;
-
   return (
-    <div className="min-h-screen bg-gray-900">
-      <Sidebar onLogout={handleLogout} />
-      
-      <div className="ml-72">
-        <Header userName={user.nombres} />
-
-        <main className="p-6">
-          {/* Header */}
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold text-white">Gestión de Reclamos</h1>
-            <p className="text-gray-400 text-sm">Administra y responde los reclamos de los vecinos</p>
-          </div>
-
-          {/* Tarjetas de estadísticas */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-            <div className="bg-gray-800 rounded-2xl p-4 text-center">
-              <p className="text-gray-400 text-sm">Total</p>
-              <p className="text-white text-2xl font-bold">{stats.total}</p>
-            </div>
-            <div className="bg-orange-500/20 rounded-2xl p-4 text-center">
-              <p className="text-orange-400 text-sm">Pendientes</p>
-              <p className="text-orange-400 text-2xl font-bold">{stats.pendientes}</p>
-              <FaHourglassHalf className="text-orange-400 mx-auto mt-1" />
-            </div>
-            <div className="bg-blue-500/20 rounded-2xl p-4 text-center">
-              <p className="text-blue-400 text-sm">En proceso</p>
-              <p className="text-blue-400 text-2xl font-bold">{stats.enProceso}</p>
-              <FaClock className="text-blue-400 mx-auto mt-1" />
-            </div>
-            <div className="bg-green-500/20 rounded-2xl p-4 text-center">
-              <p className="text-green-400 text-sm">Resueltos</p>
-              <p className="text-green-400 text-2xl font-bold">{stats.resueltos}</p>
-              <FaCheckCircle className="text-green-400 mx-auto mt-1" />
-            </div>
-            <div className="bg-red-500/20 rounded-2xl p-4 text-center">
-              <p className="text-red-400 text-sm">Rechazados</p>
-              <p className="text-red-400 text-2xl font-bold">{stats.rechazados}</p>
-            </div>
-          </div>
-
-          {/* Filtros */}
-          <ReclamoFilters
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            selectedEstado={selectedEstado}
-            onEstadoChange={setSelectedEstado}
-            selectedTipo={selectedTipo}
-            onTipoChange={setSelectedTipo}
-          />
-
-          {/* Tabla de reclamos */}
-          <div className="bg-gray-800 rounded-2xl overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-700/50 border-b border-gray-700">
-                  <tr>
-                    <th className="text-left p-4 text-gray-300 font-semibold">ID</th>
-                    <th className="text-left p-4 text-gray-300 font-semibold">Usuario</th>
-                    <th className="text-left p-4 text-gray-300 font-semibold">Tipo</th>
-                    <th className="text-left p-4 text-gray-300 font-semibold">Descripción</th>
-                    <th className="text-left p-4 text-gray-300 font-semibold">Propiedad</th>
-                    <th className="text-left p-4 text-gray-300 font-semibold">Fecha</th>
-                    <th className="text-left p-4 text-gray-300 font-semibold">Estado</th>
-                    <th className="text-left p-4 text-gray-300 font-semibold">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {reclamosFiltrados.length === 0 ? (
-                    <tr>
-                      <td colSpan={8} className="text-center p-8 text-gray-400">
-                        No hay reclamos registrados
-                      </td>
-                    </tr>
-                  ) : (
-                    reclamosFiltrados.map((reclamo) => (
-                      <tr key={reclamo.id} className="border-b border-gray-700 hover:bg-gray-750 transition">
-                        <td className="p-4 text-white">#{reclamo.id}</td>
-                        <td className="p-4 text-white">
-                          {reclamo.usuario_nombre || `Usuario #${reclamo.usuario}`}<br />
-                          <span className="text-gray-500 text-xs">{reclamo.usuario_dni}</span>
-                        </td>
-                        <td className="p-4">
-                          <span className={`px-2 py-1 rounded-full text-xs ${
-                            reclamo.tipo === 'FUGA' ? 'bg-blue-500/20 text-blue-400' :
-                            reclamo.tipo === 'CALIDAD_AGUA' ? 'bg-cyan-500/20 text-cyan-400' :
-                            reclamo.tipo === 'MEDIDOR' ? 'bg-purple-500/20 text-purple-400' :
-                            reclamo.tipo === 'FACTURACION' ? 'bg-orange-500/20 text-orange-400' :
-                            'bg-gray-500/20 text-gray-400'
-                          }`}>
-                            {reclamo.tipo === 'FUGA' ? 'Fuga' :
-                             reclamo.tipo === 'CALIDAD_AGUA' ? 'Calidad' :
-                             reclamo.tipo === 'MEDIDOR' ? 'Medidor' :
-                             reclamo.tipo === 'FACTURACION' ? 'Facturación' : 'Otro'}
-                          </span>
-                        </td>
-                        <td className="p-4 text-white max-w-xs truncate">{reclamo.descripcion}</td>
-                        <td className="p-4 text-white max-w-xs truncate">
-                          {reclamo.propiedad_direccion || `Propiedad #${reclamo.propiedad}`}
-                        </td>
-                        <td className="p-4 text-white">
-                          {new Date(reclamo.fecha_creacion).toLocaleDateString('es-PE')}
-                        </td>
-                        <td className="p-4">
-                          <span className={`px-2 py-1 rounded-full text-xs ${
-                            reclamo.estado === 'PENDIENTE' ? 'bg-orange-500/20 text-orange-400' :
-                            reclamo.estado === 'EN_PROCESO' ? 'bg-blue-500/20 text-blue-400' :
-                            reclamo.estado === 'RESUELTO' ? 'bg-green-500/20 text-green-400' :
-                            'bg-red-500/20 text-red-400'
-                          }`}>
-                            {reclamo.estado === 'PENDIENTE' ? 'Pendiente' :
-                             reclamo.estado === 'EN_PROCESO' ? 'En proceso' :
-                             reclamo.estado === 'RESUELTO' ? 'Resuelto' : 'Rechazado'}
-                          </span>
-                        </td>
-                        <td className="p-4">
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => handleVerDetalle(reclamo)}
-                              className="p-2 hover:bg-gray-700 rounded-lg transition"
-                              title="Ver detalle"
-                            >
-                              <FaEye className="text-cyan-400" />
-                            </button>
-                            <button
-                              onClick={() => handleEliminarReclamo(reclamo)}
-                              className="p-2 hover:bg-gray-700 rounded-lg transition"
-                              title="Eliminar"
-                            >
-                              <FaTrash className="text-red-400" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </main>
+    <AdminLayout>
+      <div className="mb-6 flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-paper-900">Gestion de Reclamos</h1>
+          <p className="text-paper-600">Atender y resolver reclamos de usuarios</p>
+        </div>
       </div>
 
-      {/* Modales */}
+      <ReclamoFilters
+        selectedEstado={selectedEstado}
+        onEstadoChange={setSelectedEstado}
+        selectedTipo={selectedTipo}
+        onTipoChange={setSelectedTipo}
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+      />
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="card p-4">
+          <p className="text-xs text-paper-500 label">Total</p>
+          <p className="text-2xl font-bold text-paper-900">{reclamos.length}</p>
+        </div>
+        <div className="card p-4 border-l-4 border-l-orange-500">
+          <p className="text-xs text-paper-500 label">Pendientes</p>
+          <p className="text-2xl font-bold text-orange-600">
+            {reclamos.filter(r => r.estado === 'PENDIENTE').length}
+          </p>
+        </div>
+        <div className="card p-4 border-l-4 border-l-blue-500">
+          <p className="text-xs text-paper-500 label">En proceso</p>
+          <p className="text-2xl font-bold text-blue-600">
+            {reclamos.filter(r => r.estado === 'EN_PROCESO').length}
+          </p>
+        </div>
+        <div className="card p-4 border-l-4 border-l-green-500">
+          <p className="text-xs text-paper-500 label">Resueltos</p>
+          <p className="text-2xl font-bold text-green-600">
+            {reclamos.filter(r => r.estado === 'RESUELTO').length}
+          </p>
+        </div>
+      </div>
+
+      <div className="card overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="table-base">
+            <thead className="table-header">
+              <tr>
+                <th>ID</th>
+                <th>Tipo</th>
+                <th>Descripcion</th>
+                <th>Estado</th>
+                <th>Fecha de Creacion</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-paper-200">
+              {reclamosFiltrados.map((reclamo) => (
+                <tr key={reclamo.id} className="table-row">
+                  <td className="font-mono text-paper-500">#{reclamo.id}</td>
+                  <td className="text-paper-900">
+                    <span className="badge badge-info">
+                      {
+                        reclamo.tipo === 'FUGA' ? 'Fuga de agua' :
+                        reclamo.tipo === 'CALIDAD_AGUA' ? 'Calidad del agua' :
+                        reclamo.tipo === 'MEDIDOR' ? 'Problema con medidor' :
+                        reclamo.tipo === 'FACTURACION' ? 'Problema de facturacion' :
+                        reclamo.tipo
+                      }
+                    </span>
+                  </td>
+                  <td className="text-paper-700 max-w-xs truncate">
+                    {reclamo.descripcion}
+                  </td>
+                  <td>
+                    <span className={`badge ${
+                      reclamo.estado === 'PENDIENTE' ? 'badge-warning' :
+                      reclamo.estado === 'EN_PROCESO' ? 'badge-info' :
+                      reclamo.estado === 'RESUELTO' ? 'badge-success' :
+                      'badge-danger'
+                    }`}>
+                      {reclamo.estado}
+                    </span>
+                  </td>
+                  <td className="text-paper-600">
+                    {new Date(reclamo.fecha_creacion).toLocaleDateString('es-PE')}
+                  </td>
+                  <td>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleVerDetalle(reclamo)}
+                        className="p-1 text-paper-600 hover:text-pvc-blue transition-colors"
+                        title="Ver detalle"
+                      >
+                        <FaEye className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleEliminarReclamo(reclamo)}
+                        className="p-1 text-paper-600 hover:text-stamp-red transition-colors"
+                        title="Eliminar"
+                      >
+                        <FaTrash className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {reclamosFiltrados.length === 0 && (
+          <div className="p-12 text-center">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-paper-200 flex items-center justify-center">
+              <svg className="w-8 h-8 text-paper-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold text-paper-900 mb-2">No hay reclamos</h3>
+            <p className="text-paper-500">
+              {searchTerm || selectedEstado !== 'todos' || selectedTipo !== 'todos'
+                ? 'No se encontraron reclamos con los filtros seleccionados.'
+                : 'No hay reclamos registrados en el sistema.'}
+            </p>
+            {(searchTerm || selectedEstado !== 'todos' || selectedTipo !== 'todos') && (
+              <button
+                onClick={() => {
+                  setSearchTerm('');
+                  setSelectedEstado('todos');
+                  setSelectedTipo('todos');
+                }}
+                className="btn-primary mt-4"
+              >
+                Limpiar filtros
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
       <ReclamoDetailModal
         isOpen={detailModalAbierto}
         onClose={() => setDetailModalAbierto(false)}
@@ -289,9 +274,9 @@ export default function ReclamosPage() {
       <ReclamoDeleteModal
         isOpen={deleteModalAbierto}
         onClose={() => setDeleteModalAbierto(false)}
-        onConfirm={handleConfirmarEliminacion}
+        onConfirm={confirmarEliminar}
         reclamo={reclamoSeleccionado}
       />
-    </div>
+    </AdminLayout>
   );
 }

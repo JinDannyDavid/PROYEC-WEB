@@ -17,6 +17,7 @@ interface Factura {
   monto_total: number;
   fecha_vencimiento: string;
   estado: string;
+  consumo_m3?: number;
 }
 
 interface Pago {
@@ -27,7 +28,7 @@ interface Pago {
 }
 
 export default function Dashboard() {
-  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const { user, isAuthenticated, loading: authLoading, logout } = useAuth();
   const router = useRouter();
 
   const { data: facturas = [], loading: cargandoFacturas, error: errorFacturas } = useFacturasPendientes();
@@ -43,6 +44,8 @@ export default function Dashboard() {
   const pagosArray = Array.isArray(pagos) ? pagos : [];
 
   const totalDeuda = facturasArray.reduce((sum, f) => sum + (f.monto_total || 0), 0);
+  const consumoActual = facturasArray.length > 0 ? (facturasArray[0].consumo_m3 ?? 0) : 0;
+  
   const ultimosPagos = pagosArray.slice(0, 3).map((p: Pago) => ({
     id: p.id,
     date: new Date(p.fecha_pago).toLocaleDateString('es-PE'),
@@ -58,6 +61,15 @@ export default function Dashboard() {
     dueDate: new Date(f.fecha_vencimiento).toLocaleDateString('es-PE'),
   }));
 
+  // Datos de consumo para el grafico (usar facturas ordenadas por fecha)
+  const facturasOrdenadas = [...facturasArray].sort((a, b) => 
+    new Date(a.fecha_vencimiento).getTime() - new Date(b.fecha_vencimiento).getTime()
+  );
+  const consumptionData = facturasOrdenadas.slice(-6).map(f => ({
+    month: f.periodo.split('/')[0], // Asumiendo formato "Mes/Anio"
+    consumption: f.consumo_m3 ?? 0,
+  }));
+
   if (authLoading || cargandoFacturas || cargandoPagos) {
     return (
       <div className="min-h-screen surface-1 flex items-center justify-center">
@@ -68,15 +80,9 @@ export default function Dashboard() {
 
   if (!user) return null;
 
-  const handleLogout = () => {
-    localStorage.removeItem('access_token');
-    document.cookie = 'access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-    router.push('/login');
-  };
-
   return (
     <div className="min-h-screen surface-1 flex">
-      <Sidebar onLogout={handleLogout} />
+      <Sidebar onLogout={logout} />
 
       <div className="ml-64 flex-1 flex flex-col min-h-screen">
         <Header userName={`${user.nombres} ${user.apellidos}`} />
@@ -88,7 +94,7 @@ export default function Dashboard() {
               dueDate={facturasArray[0]?.fecha_vencimiento
                 ? new Date(facturasArray[0].fecha_vencimiento).toLocaleDateString('es-PE')
                 : '—'}
-              consumo={28}
+              consumo={consumoActual}
             />
             <RecentPayments payments={ultimosPagos} />
           </div>
@@ -100,13 +106,13 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <UpcomingBills bills={bills} />
             <ConsumptionChart
-              data={[
-                { month: 'Ene', consumption: 22 },
-                { month: 'Feb', consumption: 25 },
-                { month: 'Mar', consumption: 28 },
-                { month: 'Abr', consumption: 24 },
-                { month: 'May', consumption: 30 },
-                { month: 'Jun', consumption: 26 },
+              data={consumptionData.length > 0 ? consumptionData : [
+                { month: 'Ene', consumption: 0 },
+                { month: 'Feb', consumption: 0 },
+                { month: 'Mar', consumption: 0 },
+                { month: 'Abr', consumption: 0 },
+                { month: 'May', consumption: 0 },
+                { month: 'Jun', consumption: 0 },
               ]}
             />
           </div>

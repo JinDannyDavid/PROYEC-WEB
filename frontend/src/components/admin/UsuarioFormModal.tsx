@@ -72,20 +72,24 @@ export default function UsuarioFormModal({ isOpen, onClose, onSave, usuario, isE
     setLoading(true);
     setError('');
 
-    if (!isEditing && formData.password !== formData.confirm_password) {
+    // Validar contraseñas si se proporcionan (en creación siempre, en edición solo si se llenan)
+    const isChangingPassword = formData.password || formData.confirm_password;
+    if (isChangingPassword && formData.password !== formData.confirm_password) {
       setError('Las contraseñas no coinciden');
       setLoading(false);
       return;
     }
 
-    if (!isEditing && formData.password.length < 6) {
+    if (isChangingPassword && formData.password.length < 6) {
       setError('La contraseña debe tener al menos 6 caracteres');
       setLoading(false);
       return;
     }
 
     try {
-      await onSave(formData);
+      // Si no se cambia contraseña, no enviarla al backend
+      const payload = isChangingPassword ? formData : { ...formData, password: '', confirm_password: '' };
+      await onSave(payload);
       onClose();
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Error al guardar usuario');
