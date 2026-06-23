@@ -2,13 +2,12 @@ import AdminLayout from '@/components/admin/AdminLayout';
 import ReclamoDeleteModal from '@/components/admin/ReclamoDeleteModal';
 import ReclamoDetailModal from '@/components/admin/ReclamoDetailModal';
 import ReclamoFilters from '@/components/admin/ReclamoFilters';
-import Sidebar from '@/components/admin/Sidebar';
+import ReclamosTable from '@/components/admin/ReclamosTable';
 import { useAuth } from '@/contexts/AuthContext';
 import { adminReclamoService, Reclamo } from '@/services/adminReclamoService';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
-import { FaCheckCircle, FaClock, FaEye, FaHourglassHalf, FaTrash } from 'react-icons/fa';
 
 export default function ReclamosPage() {
   const { user, isAuthenticated, loading: authLoading, logout } = useAuth();
@@ -167,102 +166,39 @@ export default function ReclamosPage() {
         </div>
       </div>
 
-      <div className="card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="table-base">
-            <thead className="table-header">
-              <tr>
-                <th>ID</th>
-                <th>Tipo</th>
-                <th>Descripcion</th>
-                <th>Estado</th>
-                <th>Fecha de Creacion</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-paper-200">
-              {reclamosFiltrados.map((reclamo) => (
-                <tr key={reclamo.id} className="table-row">
-                  <td className="font-mono text-paper-500">#{reclamo.id}</td>
-                  <td className="text-paper-900">
-                    <span className="badge badge-info">
-                      {
-                        reclamo.tipo === 'FUGA' ? 'Fuga de agua' :
-                        reclamo.tipo === 'CALIDAD_AGUA' ? 'Calidad del agua' :
-                        reclamo.tipo === 'MEDIDOR' ? 'Problema con medidor' :
-                        reclamo.tipo === 'FACTURACION' ? 'Problema de facturacion' :
-                        reclamo.tipo
-                      }
-                    </span>
-                  </td>
-                  <td className="text-paper-700 max-w-xs truncate">
-                    {reclamo.descripcion}
-                  </td>
-                  <td>
-                    <span className={`badge ${
-                      reclamo.estado === 'PENDIENTE' ? 'badge-warning' :
-                      reclamo.estado === 'EN_PROCESO' ? 'badge-info' :
-                      reclamo.estado === 'RESUELTO' ? 'badge-success' :
-                      'badge-danger'
-                    }`}>
-                      {reclamo.estado}
-                    </span>
-                  </td>
-                  <td className="text-paper-600">
-                    {new Date(reclamo.fecha_creacion).toLocaleDateString('es-PE')}
-                  </td>
-                  <td>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handleVerDetalle(reclamo)}
-                        className="p-1 text-paper-600 hover:text-pvc-blue transition-colors"
-                        title="Ver detalle"
-                      >
-                        <FaEye className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleEliminarReclamo(reclamo)}
-                        className="p-1 text-paper-600 hover:text-stamp-red transition-colors"
-                        title="Eliminar"
-                      >
-                        <FaTrash className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      <ReclamosTable
+        reclamos={reclamosFiltrados}
+        onView={handleVerDetalle}
+        onDelete={handleEliminarReclamo}
+      />
 
-        {reclamosFiltrados.length === 0 && (
-          <div className="p-12 text-center">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-paper-200 flex items-center justify-center">
-              <svg className="w-8 h-8 text-paper-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
-              </svg>
-            </div>
-            <h3 className="text-lg font-semibold text-paper-900 mb-2">No hay reclamos</h3>
-            <p className="text-paper-500">
-              {searchTerm || selectedEstado !== 'todos' || selectedTipo !== 'todos'
-                ? 'No se encontraron reclamos con los filtros seleccionados.'
-                : 'No hay reclamos registrados en el sistema.'}
-            </p>
-            {(searchTerm || selectedEstado !== 'todos' || selectedTipo !== 'todos') && (
-              <button
-                onClick={() => {
-                  setSearchTerm('');
-                  setSelectedEstado('todos');
-                  setSelectedTipo('todos');
-                }}
-                className="btn-primary mt-4"
-              >
-                Limpiar filtros
-              </button>
-            )}
+      {reclamosFiltrados.length === 0 && (
+        <div className="p-12 text-center">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-paper-200 flex items-center justify-center">
+            <svg className="w-8 h-8 text-paper-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
           </div>
-        )}
-      </div>
+          <h3 className="text-lg font-semibold text-paper-900 mb-2">No hay reclamos</h3>
+          <p className="text-paper-500">
+            {searchTerm || selectedEstado !== 'todos' || selectedTipo !== 'todos'
+              ? 'No se encontraron reclamos con los filtros seleccionados.'
+              : 'No hay reclamos registrados en el sistema.'}
+          </p>
+          {(searchTerm || selectedEstado !== 'todos' || selectedTipo !== 'todos') && (
+            <button
+              onClick={() => {
+                setSearchTerm('');
+                setSelectedEstado('todos');
+                setSelectedTipo('todos');
+              }}
+              className="btn-primary mt-4"
+            >
+              Limpiar filtros
+            </button>
+          )}
+        </div>
+      )}
 
       <ReclamoDetailModal
         isOpen={detailModalAbierto}

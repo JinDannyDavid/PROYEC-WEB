@@ -2,14 +2,14 @@ import AdminLayout from '@/components/admin/AdminLayout';
 import PropiedadDeleteModal from '@/components/admin/PropiedadDeleteModal';
 import PropiedadFilters from '@/components/admin/PropiedadFilters';
 import PropiedadFormModal from '@/components/admin/PropiedadesFormModal';
-import Sidebar from '@/components/admin/Sidebar';
+import PropiedadesTable from '@/components/admin/PropiedadesTable';
 import { useAuth } from '@/contexts/AuthContext';
 import { adminPropiedadService, Propiedad } from '@/services/adminPropiedadService';
 import { adminUserService, Usuario } from '@/services/adminUserService';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
-import { FaEdit, FaPlus, FaTrash } from 'react-icons/fa';
+import { FaPlus } from 'react-icons/fa';
 
 const estadoOptions = [
   { value: 'todos', label: 'Todos los estados' },
@@ -170,87 +170,38 @@ export default function PropiedadesPage() {
         estadoOptions={estadoOptions}
       />
 
-      <div className="card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="table-base">
-            <thead className="table-header">
-              <tr>
-                <th>Numero de Medidor</th>
-                <th>Direccion</th>
-                <th>Propietario</th>
-                <th>Estado</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-paper-200">
-              {propiedadesFiltradas.map((propiedad) => (
-                <tr key={propiedad.id} className="table-row">
-                  <td className="font-mono font-medium text-pvc-blue">{propiedad.numero_medidor}</td>
-                  <td className="text-paper-900">{propiedad.direccion}</td>
-                  <td className="text-paper-600">
-                    {propiedad.usuario_nombre}
-                  </td>
-                  <td>
-                    <span className={`badge ${
-                      propiedad.estado === 'ACTIVO' ? 'badge-success' :
-                      propiedad.estado === 'CORTADO' ? 'badge-danger' :
-                      propiedad.estado === 'MOROSO' ? 'badge-warning' :
-                      'badge-info'
-                    }`}>
-                      {propiedad.estado}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handleEditarPropiedad(propiedad)}
-                        className="p-1 text-paper-600 hover:text-pvc-blue transition-colors"
-                        title="Editar"
-                      >
-                        <FaEdit className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleEliminarPropiedad(propiedad)}
-                        className="p-1 text-paper-600 hover:text-stamp-red transition-colors"
-                        title="Eliminar"
-                      >
-                        <FaTrash className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      <PropiedadesTable
+        propiedades={propiedadesFiltradas}
+        onEdit={handleEditarPropiedad}
+        onDelete={handleEliminarPropiedad}
+      />
 
-        {propiedadesFiltradas.length === 0 && (
-          <div className="p-12 text-center">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-paper-200 flex items-center justify-center">
-              <svg className="w-8 h-8 text-paper-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
-              </svg>
-            </div>
-            <h3 className="text-lg font-semibold text-paper-900 mb-2">No hay propiedades</h3>
-            <p className="text-paper-500">
-              {searchTerm || selectedEstado !== 'todos'
-                ? 'No se encontraron propiedades con los filtros seleccionados.'
-                : 'No hay propiedades registradas en el sistema.'}
-            </p>
-            {(searchTerm || selectedEstado !== 'todos') && (
-              <button
-                onClick={() => {
-                  setSearchTerm('');
-                  setSelectedEstado('todos');
-                }}
-                className="btn-primary mt-4"
-              >
-                Limpiar filtros
-              </button>
-            )}
+      {propiedadesFiltradas.length === 0 && (
+        <div className="p-12 text-center">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-paper-200 flex items-center justify-center">
+            <svg className="w-8 h-8 text-paper-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+            </svg>
           </div>
-        )}
-      </div>
+          <h3 className="text-lg font-semibold text-paper-900 mb-2">No hay propiedades</h3>
+          <p className="text-paper-500">
+            {searchTerm || selectedEstado !== 'todos'
+              ? 'No se encontraron propiedades con los filtros seleccionados.'
+              : 'No hay propiedades registradas en el sistema.'}
+          </p>
+          {(searchTerm || selectedEstado !== 'todos') && (
+            <button
+              onClick={() => {
+                setSearchTerm('');
+                setSelectedEstado('todos');
+              }}
+              className="btn-primary mt-4"
+            >
+              Limpiar filtros
+            </button>
+          )}
+        </div>
+      )}
 
       <PropiedadFormModal
         isOpen={modalAbierto}

@@ -2,15 +2,14 @@ import AdminLayout from '@/components/admin/AdminLayout';
 import FacturaDeleteModal from '@/components/admin/FacturaDeleteModal';
 import FacturaFilters from '@/components/admin/FacturaFilters';
 import FacturaFormModal from '@/components/admin/FacturaFormModal';
-import Header from '@/components/admin/Header';
-import Sidebar from '@/components/admin/Sidebar';
+import FacturasTable from '@/components/admin/FacturasTable';
 import { useAuth } from '@/contexts/AuthContext';
 import { adminFacturaService, Factura } from '@/services/adminFacturaService';
 import { adminPropiedadService, Propiedad } from '@/services/adminPropiedadService';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
-import { FaEdit, FaPlus, FaPrint, FaTrash } from 'react-icons/fa';
+import { FaPlus } from 'react-icons/fa';
 
 export default function FacturasPage() {
   const { user, isAuthenticated, loading: authLoading, logout } = useAuth();
@@ -162,99 +161,39 @@ export default function FacturasPage() {
         onEstadoChange={setSelectedEstado}
       />
 
-      <div className="card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="table-base">
-            <thead className="table-header">
-              <tr>
-                <th>Numero de Factura</th>
-                <th>Periodo</th>
-                <th>Propiedad</th>
-                <th>Consumo</th>
-                <th>Total</th>
-                <th>Estado</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-paper-200">
-              {facturasFiltradas.map((factura) => (
-                <tr key={factura.id} className="table-row">
-                  <td className="font-mono font-medium text-pvc-blue">{factura.numero_factura}</td>
-                  <td className="text-paper-900">{factura.periodo}</td>
-                  <td className="text-paper-600">{factura.propiedad_direccion || '-'}</td>
-                  <td className="text-paper-600">{factura.consumo_m3} m³</td>
-                  <td className="font-semibold text-paper-900">S/ {factura.monto_total.toFixed(2)}</td>
-                  <td>
-                    <span className={`badge ${
-                      factura.estado === 'PENDIENTE' ? 'badge-warning' :
-                      factura.estado === 'PAGADA' ? 'badge-success' :
-                      factura.estado === 'VENCIDA' ? 'badge-danger' :
-                      'badge-info'
-                    }`}>
-                      {factura.estado}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handleEditarFactura(factura)}
-                        className="p-1 text-paper-600 hover:text-pvc-blue transition-colors"
-                        title="Editar"
-                      >
-                        <FaEdit className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleEliminarFactura(factura)}
-                        className="p-1 text-paper-600 hover:text-stamp-red transition-colors"
-                        title="Eliminar"
-                      >
-                        <FaTrash className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => {
-                          // Imprimir factura
-                          window.open(`/api/facturas/${factura.id}/pdf`, '_blank');
-                        }}
-                        className="p-1 text-paper-600 hover:text-canal-ok transition-colors"
-                        title="Imprimir"
-                      >
-                        <FaPrint className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      <FacturasTable
+        facturas={facturasFiltradas}
+        onEdit={handleEditarFactura}
+        onDelete={handleEliminarFactura}
+        onPrint={(factura) => window.open(`/api/facturas/${factura.id}/pdf`, '_blank')}
+      />
 
-        {facturasFiltradas.length === 0 && (
-          <div className="p-12 text-center">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-paper-200 flex items-center justify-center">
-              <svg className="w-8 h-8 text-paper-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            </div>
-            <h3 className="text-lg font-semibold text-paper-900 mb-2">No hay facturas</h3>
-            <p className="text-paper-500">
-              {searchTerm || selectedEstado !== 'todos'
-                ? 'No se encontraron facturas con los filtros seleccionados.'
-                : 'No hay facturas registradas en el sistema.'}
-            </p>
-            {(searchTerm || selectedEstado !== 'todos') && (
-              <button
-                onClick={() => {
-                  setSearchTerm('');
-                  setSelectedEstado('todos');
-                }}
-                className="btn-primary mt-4"
-              >
-                Limpiar filtros
-              </button>
-            )}
+      {facturasFiltradas.length === 0 && (
+        <div className="p-12 text-center">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-paper-200 flex items-center justify-center">
+            <svg className="w-8 h-8 text-paper-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
           </div>
-        )}
-      </div>
+          <h3 className="text-lg font-semibold text-paper-900 mb-2">No hay facturas</h3>
+          <p className="text-paper-500">
+            {searchTerm || selectedEstado !== 'todos'
+              ? 'No se encontraron facturas con los filtros seleccionados.'
+              : 'No hay facturas registradas en el sistema.'}
+          </p>
+          {(searchTerm || selectedEstado !== 'todos') && (
+            <button
+              onClick={() => {
+                setSearchTerm('');
+                setSelectedEstado('todos');
+              }}
+              className="btn-primary mt-4"
+            >
+              Limpiar filtros
+            </button>
+          )}
+        </div>
+      )}
 
       <FacturaFormModal
         isOpen={modalAbierto}

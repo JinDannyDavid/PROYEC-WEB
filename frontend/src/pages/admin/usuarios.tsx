@@ -2,12 +2,13 @@ import AdminLayout from '@/components/admin/AdminLayout';
 import UsuarioDeleteModal from '@/components/admin/UsuarioDeleteModal';
 import UsuarioFilters from '@/components/admin/UsuarioFilters';
 import UsuarioFormModal from '@/components/admin/UsuarioFormModal';
+import UsuariosTable from '@/components/admin/UsuariosTable';
 import { useAuth } from '@/contexts/AuthContext';
 import { adminUserService, Usuario } from '@/services/adminUserService';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
-import { FaEdit, FaPlus, FaTrash } from 'react-icons/fa';
+import { FaPlus } from 'react-icons/fa';
 
 export default function UsuariosPage() {
   const { user, isAuthenticated, loading: authLoading, logout } = useAuth();
@@ -154,91 +155,38 @@ export default function UsuariosPage() {
         onTipoChange={setSelectedTipo}
       />
 
-      <div className="card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="table-base">
-            <thead className="table-header">
-              <tr>
-                <th>DNI</th>
-                <th>Nombre Completo</th>
-                <th>Telefono</th>
-                <th>Email</th>
-                <th>Sector</th>
-                <th>Tipo</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-paper-200">
-              {usuariosFiltrados.map((usuario) => (
-                <tr key={usuario.id} className="table-row">
-                  <td className="font-mono">{usuario.dni}</td>
-                  <td className="font-medium text-paper-900">
-                    {usuario.nombres} {usuario.apellidos}
-                  </td>
-                  <td className="text-paper-600">{usuario.telefono}</td>
-                  <td className="text-paper-600">{usuario.email || '-'}</td>
-                  <td className="text-paper-600">{usuario.sector}</td>
-                  <td>
-                    <span className={`badge ${
-                      usuario.tipo_usuario === 'ADMIN' ? 'badge-info' :
-                      usuario.tipo_usuario === 'CAJERO' ? 'badge-success' :
-                      usuario.tipo_usuario === 'TECNICO' ? 'badge-warning' :
-                      'badge-primary'
-                    }`}>
-                      {usuario.tipo_usuario}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handleEditarUsuario(usuario)}
-                        className="p-1 text-paper-600 hover:text-pvc-blue transition-colors"
-                        title="Editar"
-                      >
-                        <FaEdit className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleEliminarUsuario(usuario)}
-                        className="p-1 text-paper-600 hover:text-stamp-red transition-colors"
-                        title="Eliminar"
-                      >
-                        <FaTrash className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      <UsuariosTable
+        usuarios={usuariosFiltrados}
+        onEdit={handleEditarUsuario}
+        onDelete={handleEliminarUsuario}
+      />
 
-        {usuariosFiltrados.length === 0 && (
-          <div className="p-12 text-center">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-paper-200 flex items-center justify-center">
-              <svg className="w-8 h-8 text-paper-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-              </svg>
-            </div>
-            <h3 className="text-lg font-semibold text-paper-900 mb-2">No hay usuarios</h3>
-            <p className="text-paper-500">
-              {searchTerm || selectedTipo !== 'todos'
-                ? 'No se encontraron usuarios con los filtros seleccionados.'
-                : 'No hay usuarios registrados en el sistema.'}
-            </p>
-            {(searchTerm || selectedTipo !== 'todos') && (
-              <button
-                onClick={() => {
-                  setSearchTerm('');
-                  setSelectedTipo('todos');
-                }}
-                className="btn-primary mt-4"
-              >
-                Limpiar filtros
-              </button>
-            )}
+      {usuariosFiltrados.length === 0 && (
+        <div className="p-12 text-center">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-paper-200 flex items-center justify-center">
+            <svg className="w-8 h-8 text-paper-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
           </div>
-        )}
-      </div>
+          <h3 className="text-lg font-semibold text-paper-900 mb-2">No hay usuarios</h3>
+          <p className="text-paper-500">
+            {searchTerm || selectedTipo !== 'todos'
+              ? 'No se encontraron usuarios con los filtros seleccionados.'
+              : 'No hay usuarios registrados en el sistema.'}
+          </p>
+          {(searchTerm || selectedTipo !== 'todos') && (
+            <button
+              onClick={() => {
+                setSearchTerm('');
+                setSelectedTipo('todos');
+              }}
+              className="btn-primary mt-4"
+            >
+              Limpiar filtros
+            </button>
+          )}
+        </div>
+      )}
 
       <UsuarioFormModal
         isOpen={modalAbierto}
