@@ -6,14 +6,12 @@ import FacturasTable from '@/components/admin/FacturasTable';
 import { useAuth } from '@/contexts/AuthContext';
 import { adminFacturaService, Factura } from '@/services/adminFacturaService';
 import { adminPropiedadService, Propiedad } from '@/services/adminPropiedadService';
-import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { FaPlus } from 'react-icons/fa';
 
 export default function FacturasPage() {
-  const { user, isAuthenticated, loading: authLoading, logout } = useAuth();
-  const router = useRouter();
+  const { user } = useAuth();
   
   const [facturas, setFacturas] = useState<Factura[]>([]);
   const [facturasFiltradas, setFacturasFiltradas] = useState<Factura[]>([]);
@@ -26,15 +24,6 @@ export default function FacturasPage() {
   const [deleteModalAbierto, setDeleteModalAbierto] = useState(false);
   const [facturaSeleccionada, setFacturaSeleccionada] = useState<Factura | null>(null);
   const [modoEdicion, setModoEdicion] = useState(false);
-
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.push('/login');
-    }
-    if (user && user.tipo_usuario !== 'ADMIN') {
-      router.push('/dashboard');
-    }
-  }, [authLoading, isAuthenticated, user, router]);
 
   useEffect(() => {
     if (user && user.tipo_usuario === 'ADMIN') {
@@ -64,10 +53,11 @@ export default function FacturasPage() {
     let filtered = [...facturas];
     
     if (searchTerm) {
+      const term = searchTerm.toLowerCase();
       filtered = filtered.filter(f => 
-        f.numero_factura.includes(searchTerm) || 
-        f.periodo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (f.propiedad_direccion && f.propiedad_direccion.toLowerCase().includes(searchTerm.toLowerCase()))
+        f.numero_factura.toLowerCase().includes(term) || 
+        f.periodo.toLowerCase().includes(term) ||
+        (f.propiedad_direccion && f.propiedad_direccion.toLowerCase().includes(term))
       );
     }
     
@@ -129,7 +119,7 @@ export default function FacturasPage() {
     }
   };
 
-  if (authLoading || cargando) {
+  if (cargando) {
     return (
       <AdminLayout>
         <div className="flex items-center justify-center py-12">

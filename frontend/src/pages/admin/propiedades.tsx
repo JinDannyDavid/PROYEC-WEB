@@ -6,7 +6,6 @@ import PropiedadesTable from '@/components/admin/PropiedadesTable';
 import { useAuth } from '@/contexts/AuthContext';
 import { adminPropiedadService, Propiedad } from '@/services/adminPropiedadService';
 import { adminUserService, Usuario } from '@/services/adminUserService';
-import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { FaPlus } from 'react-icons/fa';
@@ -20,8 +19,7 @@ const estadoOptions = [
 ];
 
 export default function PropiedadesPage() {
-  const { user, isAuthenticated, loading: authLoading, logout } = useAuth();
-  const router = useRouter();
+  const { user } = useAuth();
   
   const [propiedades, setPropiedades] = useState<Propiedad[]>([]);
   const [propiedadesFiltradas, setPropiedadesFiltradas] = useState<Propiedad[]>([]);
@@ -34,15 +32,6 @@ export default function PropiedadesPage() {
   const [deleteModalAbierto, setDeleteModalAbierto] = useState(false);
   const [propiedadSeleccionada, setPropiedadSeleccionada] = useState<Propiedad | null>(null);
   const [modoEdicion, setModoEdicion] = useState(false);
-
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.push('/login');
-    }
-    if (user && user.tipo_usuario !== 'ADMIN') {
-      router.push('/dashboard');
-    }
-  }, [authLoading, isAuthenticated, user, router]);
 
   useEffect(() => {
     if (user && user.tipo_usuario === 'ADMIN') {
@@ -137,7 +126,7 @@ export default function PropiedadesPage() {
     }
   };
 
-  if (authLoading || cargando) {
+  if (cargando) {
     return (
       <AdminLayout>
         <div className="flex items-center justify-center py-12">

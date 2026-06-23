@@ -3,17 +3,14 @@ import ReportCharts from '@/components/admin/ReportCharts';
 import ReportFilters from '@/components/admin/ReportFilters';
 import ReportStats from '@/components/admin/ReportStats';
 import ReportTables from '@/components/admin/ReportTables';
-import Sidebar from '@/components/admin/Sidebar';
 import { useAuth } from '@/contexts/AuthContext';
 import { adminReportService, DashboardStats, IngresoMensual, MetodoPagoStats, ReclamoPorTipo, UsuarioTop } from '@/services/adminReportService';
-import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
-import { FaDownload, FaExclamationTriangle, FaMoneyBillWave } from 'react-icons/fa';
+import { FaDownload } from 'react-icons/fa';
 
 export default function ReportesPage() {
-  const { user, isAuthenticated, loading: authLoading, logout } = useAuth();
-  const router = useRouter();
+  const { user } = useAuth();
   
   const [stats, setStats] = useState<DashboardStats>({
     totalUsuarios: 0,
@@ -28,15 +25,6 @@ export default function ReportesPage() {
   const [topUsuarios, setTopUsuarios] = useState<UsuarioTop[]>([]);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [cargando, setCargando] = useState(true);
-
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.push('/login');
-    }
-    if (user && user.tipo_usuario !== 'ADMIN') {
-      router.push('/dashboard');
-    }
-  }, [authLoading, isAuthenticated, user, router]);
 
   useEffect(() => {
     if (user && user.tipo_usuario === 'ADMIN') {
@@ -67,7 +55,7 @@ export default function ReportesPage() {
     }
   };
 
-  if (authLoading || cargando) {
+  if (cargando) {
     return (
       <AdminLayout>
         <div className="flex items-center justify-center py-12">

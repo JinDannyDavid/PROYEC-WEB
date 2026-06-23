@@ -6,14 +6,12 @@ import PagosTable from '@/components/admin/PagosTable';
 import { useAuth } from '@/contexts/AuthContext';
 import { adminFacturaService, Factura } from '@/services/adminFacturaService';
 import { adminPagoService, Pago } from '@/services/adminPagoService';
-import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { FaPlus } from 'react-icons/fa';
 
 export default function PagosPage() {
-  const { user, isAuthenticated, loading: authLoading, logout } = useAuth();
-  const router = useRouter();
+  const { user } = useAuth();
   
   const [pagos, setPagos] = useState<Pago[]>([]);
   const [pagosFiltrados, setPagosFiltrados] = useState<Pago[]>([]);
@@ -26,15 +24,6 @@ export default function PagosPage() {
   const [deleteModalAbierto, setDeleteModalAbierto] = useState(false);
   const [pagoSeleccionado, setPagoSeleccionado] = useState<Pago | null>(null);
   const [modoEdicion, setModoEdicion] = useState(false);
-
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.push('/login');
-    }
-    if (user && user.tipo_usuario !== 'ADMIN') {
-      router.push('/dashboard');
-    }
-  }, [authLoading, isAuthenticated, user, router]);
 
   useEffect(() => {
     if (user && user.tipo_usuario === 'ADMIN') {
@@ -129,7 +118,7 @@ export default function PagosPage() {
     }
   };
 
-  if (authLoading || cargando) {
+  if (cargando) {
     return (
       <AdminLayout>
         <div className="flex items-center justify-center py-12">

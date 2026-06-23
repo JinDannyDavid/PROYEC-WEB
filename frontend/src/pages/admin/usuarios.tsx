@@ -5,14 +5,12 @@ import UsuarioFormModal from '@/components/admin/UsuarioFormModal';
 import UsuariosTable from '@/components/admin/UsuariosTable';
 import { useAuth } from '@/contexts/AuthContext';
 import { adminUserService, Usuario } from '@/services/adminUserService';
-import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { FaPlus } from 'react-icons/fa';
 
 export default function UsuariosPage() {
-  const { user, isAuthenticated, loading: authLoading, logout } = useAuth();
-  const router = useRouter();
+  const { user } = useAuth();
   
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [usuariosFiltrados, setUsuariosFiltrados] = useState<Usuario[]>([]);
@@ -24,15 +22,6 @@ export default function UsuariosPage() {
   const [deleteModalAbierto, setDeleteModalAbierto] = useState(false);
   const [usuarioSeleccionado, setUsuarioSeleccionado] = useState<Usuario | null>(null);
   const [modoEdicion, setModoEdicion] = useState(false);
-
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.push('/login');
-    }
-    if (user && user.tipo_usuario !== 'ADMIN') {
-      router.push('/dashboard');
-    }
-  }, [authLoading, isAuthenticated, user, router]);
 
   useEffect(() => {
     if (user && user.tipo_usuario === 'ADMIN') {
@@ -123,7 +112,7 @@ export default function UsuariosPage() {
     }
   };
 
-  if (authLoading || cargando) {
+  if (cargando) {
     return (
       <AdminLayout>
         <div className="flex items-center justify-center py-12">

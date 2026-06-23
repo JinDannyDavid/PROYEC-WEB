@@ -5,13 +5,11 @@ import ReclamoFilters from '@/components/admin/ReclamoFilters';
 import ReclamosTable from '@/components/admin/ReclamosTable';
 import { useAuth } from '@/contexts/AuthContext';
 import { adminReclamoService, Reclamo } from '@/services/adminReclamoService';
-import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
 
 export default function ReclamosPage() {
-  const { user, isAuthenticated, loading: authLoading, logout } = useAuth();
-  const router = useRouter();
+  const { user } = useAuth();
   
   const [reclamos, setReclamos] = useState<Reclamo[]>([]);
   const [reclamosFiltrados, setReclamosFiltrados] = useState<Reclamo[]>([]);
@@ -23,15 +21,6 @@ export default function ReclamosPage() {
   const [detailModalAbierto, setDetailModalAbierto] = useState(false);
   const [deleteModalAbierto, setDeleteModalAbierto] = useState(false);
   const [reclamoSeleccionado, setReclamoSeleccionado] = useState<Reclamo | null>(null);
-
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.push('/login');
-    }
-    if (user && user.tipo_usuario !== 'ADMIN') {
-      router.push('/dashboard');
-    }
-  }, [authLoading, isAuthenticated, user, router]);
 
   useEffect(() => {
     if (user && user.tipo_usuario === 'ADMIN') {
@@ -113,7 +102,7 @@ export default function ReclamosPage() {
     }
   };
 
-  if (authLoading || cargando) {
+  if (cargando) {
     return (
       <AdminLayout>
         <div className="flex items-center justify-center py-12">
