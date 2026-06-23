@@ -221,7 +221,7 @@
   }
 
   .section-lg {
-    @apply py-14 sm:py-18 lg:py-20;
+    @apply py-14 sm:py-16 lg:py-20;
   }
 
   /* Focus visible global */
@@ -232,7 +232,7 @@
   /* Skip link para accesibilidad */
   .skip-link {
     @apply absolute -top-10 left-4 z-50 px-4 py-2 rounded-control bg-pvc-blue text-white font-medium
-           focus:top-4 focus:not-sr-only transition-top duration-200;
+           focus:top-4 focus:not-sr-only transition duration-200;
   }
 }
 
