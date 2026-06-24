@@ -45,7 +45,7 @@ env/
 frontend/.env.local
 frontend/.env.production
 jasspalian_backend/.env
-
+AGENTS.md
 # -------------------------------------------
 # DATABASE
 # -------------------------------------------

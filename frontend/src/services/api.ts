@@ -24,18 +24,7 @@ class TokenManager {
 
     this.initPromise = (async () => {
       try {
-        const cookies = document.cookie.split(';');
-        for (const cookie of cookies) {
-          const [name, value] = cookie.trim().split('=');
-          if (name === 'access_token') {
-            this.accessToken = value;
-            break;
-          }
-        }
-        if (!this.accessToken) {
-          this.accessToken = localStorage.getItem('access_token');
-        }
-        this.refreshToken = localStorage.getItem('refresh_token');
+        await this.loadFromStorage();
       } finally {
         this.initialized = true;
       }
@@ -44,8 +33,40 @@ class TokenManager {
     await this.initPromise;
   }
 
+  private async loadFromStorage(): Promise<void> {
+    if (typeof window === 'undefined') return;
+    
+    // Leer de cookies (incluye HttpOnly del backend)
+    const cookies = document.cookie.split(';');
+    for (const cookie of cookies) {
+      const [name, ...valueParts] = cookie.trim().split('=');
+      const value = valueParts.join('=');
+      if (name === 'access_token') {
+        this.accessToken = value;
+      } else if (name === 'refresh_token') {
+        this.refreshToken = value;
+      }
+    }
+    // Fallback a localStorage
+    if (!this.accessToken) {
+      this.accessToken = localStorage.getItem('access_token');
+    }
+    if (!this.refreshToken) {
+      this.refreshToken = localStorage.getItem('refresh_token');
+    }
+  }
+
+  // Método público para forzar recarga desde storage
+  async refreshFromStorage(): Promise<void> {
+    this.initialized = false;
+    this.initPromise = null;
+    await this.initialize();
+  }
+
   async getTokens(): Promise<{ access: string | null; refresh: string | null }> {
     await this.initialize();
+    // Siempre recargar desde storage para obtener tokens actualizados
+    await this.loadFromStorage();
     return { access: this.accessToken, refresh: this.refreshToken };
   }
 

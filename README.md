@@ -22,6 +22,21 @@ Monorepo con arquitectura cliente-servidor:
 - **Autenticación JWT** (access token 1 día, refresh token 7 días)
 - **CORS** configurado para `localhost:3000` y redes locales `192.168.100.x`
 
+### Endpoints API Principales
+
+| Endpoint | Método | Descripción | Auth |
+|----------|--------|-------------|------|
+| `/api/token/` | POST | Login (obtiene access + refresh) | Público |
+| `/api/token/refresh/` | POST | Renueva access token | Refresh token |
+| `/api/usuarios/` | POST | Registro de usuario | Público |
+| `/api/perfil/` | GET | Perfil usuario autenticado | Bearer token |
+| `/api/admin/estadisticas/` | GET | Stats dashboard (6 meses ingresos) | Admin |
+| `/api/admin/ingresos-mensuales/?anio=2026` | GET | Ingresos 12 meses | Admin |
+| `/api/admin/reclamos-por-tipo/` | GET | Reclamos agrupados por tipo | Admin |
+| `/api/admin/metodos-pago/` | GET | Stats métodos de pago | Admin |
+| `/api/admin/top-usuarios/` | GET | Top 10 usuarios por pagos | Admin |
+| CRUD completos para: usuarios, propiedades, facturas, pagos, reclamos, notificaciones | | | Según rol |
+
 ---
 
 ## 🛠️ Tecnologías
@@ -88,8 +103,8 @@ jasspalian_web/
     │   │   ├── index.tsx       # Landing page
     │   │   ├── login.tsx
     │   │   ├── register.tsx
-    │   │   ├── dashboard/      # Dashboard Residente
-    │   │   └── admin/          # Dashboard Admin (pendiente)
+    │   │   ├── dashboard/      # Dashboard Residente (8 páginas)
+    │   │   └── admin/          # Dashboard Admin (7 páginas - COMPLETO)
     │   ├── components/         # Componentes reutilizables
     │   ├── core/               # Servicios base, config, hooks
     │   ├── hooks/              # Custom hooks (useApi, cache)
@@ -217,16 +232,20 @@ NEXT_PUBLIC_API_URL=http://localhost:8000/api
 
 ---
 
-## 👤 Credenciales por Defecto
+## 👤 Credenciales de Prueba
 
-Después de `docker-compose up` y migraciones:
+Después de `docker-compose up` y migraciones, estos usuarios están disponibles:
 
-| Rol       | Email                          | Contraseña |
-| --------- | ------------------------------ | ---------- |
-| Admin     | admin@jasspalian.gob.pe        | admin123   |
-| Residente | (crear desde registro o admin) | -          |
+| Rol       | DNI        | Contraseña | Nombre            | Email                  |
+| --------- | ---------- | ---------- | ----------------- | ---------------------- |
+| Admin     | 87654321   | Test123!   | María González    | maria@test.com         |
+| Vecino    | 12345678   | Test123!   | Juan Pérez        | juan@test.com          |
+| Vecino    | 11111111   | Test123!   | Juan Test         | juan.test@jasspalian.com |
 
-> **Nota**: Cambiar contraseñas en producción inmediatamente.
+> **Nota**: 
+> - El usuario admin original `admin@jasspalian.gob.pe` / `admin123` se crea si se ejecuta `createsuperuser`
+> - Los usuarios de prueba se crean automáticamente al ejecutar los tests de API
+> - Cambiar contraseñas en producción inmediatamente.
 
 ---
 
@@ -263,12 +282,24 @@ Después de `docker-compose up` y migraciones:
 | Perfil         | ProfileForm, AvatarUpload, ChangePassword                               |
 | Configuración  | SettingsTabs, NotificationPreferences, ThemeToggle                      |
 
-### 🔄 Pendiente: Dashboard Admin (7 páginas)
+### ✅ Dashboard Admin (7 páginas - COMPLETADO)
 
-- `/admin` (Home con stats)
-- `/admin/usuarios`, `/admin/propiedades`, `/admin/facturas`
-- `/admin/pagos`, `/admin/reclamos`, `/admin/reportes`
-- 30+ componentes (tablas, modales, filtros, charts)
+- `/admin` (Home con stats: usuarios, propiedades, facturas pendientes, pagos mes, reclamos, ingresos 6 meses)
+- `/admin/usuarios` - CRUD usuarios con tabla, filtros, modal formulario, confirmación eliminación
+- `/admin/propiedades` - CRUD propiedades con tabla, filtros, modal formulario, confirmación eliminación
+- `/admin/facturas` - CRUD facturas con tabla, filtros, modal formulario, confirmación eliminación
+- `/admin/pagos` - Registro pagos con tabla, filtros, modal formulario, confirmación eliminación
+- `/admin/reclamos` - Gestión reclamos con tabla, filtros, modal detalle, confirmación eliminación
+- `/admin/reportes` - Reportes y estadísticas: stats cards, gráficos (ingresos 12 meses, reclamos por tipo, métodos de pago), tablas top usuarios, filtros por año
+
+**Componentes Admin (28+):**
+- Layout: `AdminLayout`, `Sidebar`, `Header`, `AdminStats`
+- Tablas: `UsuariosTable`, `PropiedadesTable`, `FacturasTable`, `PagosTable`, `ReclamosTable`
+- Modales: `UsuarioFormModal`, `PropiedadesFormModal`, `FacturaFormModal`, `PagoFormModal`, `ReclamoDetailModal`
+- Filtros: `UsuarioFilters`, `PropiedadFilters`, `FacturaFilters`, `PagoFilters`, `ReclamoFilters`
+- Eliminación: `UsuarioDeleteModal`, `PropiedadDeleteModal`, `FacturaDeleteModal`, `PagoDeleteModal`, `ReclamoDeleteModal`
+- Reportes: `ReportFilters`, `ReportCharts`, `ReportTables`, `ReportStats`
+- Gráficos: `Charts`
 
 ---
 
@@ -300,19 +331,33 @@ Colores definidos en `frontend/tailwind.config.js`:
 
 ## 🧪 Testing
 
-### Backend
+### Tests Automatizados (Python + Playwright)
 
 ```bash
+# Tests API (autenticación, registro, validaciones)
+python tests/api/test_auth.py
+
+# Tests unitarios backend (serializers, models)
 cd jasspalian_backend
-python manage.py test api.tests
+$env:SECRET_KEY="test"; $env:DEBUG="1"; python manage.py test api.tests.UsuarioSerializerTest -v 2
+
+# Tests E2E Frontend (requiere Playwright)
+cd tests && npm install && npx playwright install
+npm run test:frontend          # Headless
+npm run test:frontend:headed   # Con navegador visible
 ```
 
-### Frontend
+### Estructura de Tests
 
-```bash
-cd frontend
-# No hay tests configurados actualmente
-# Agregar: npm test (configurar Jest + React Testing Library)
+```
+tests/
+├── api/
+│   ├── test_auth.py          # 9 tests: health, registro, login, refresh, perfil, validaciones
+│   └── create_users.py       # Script crear usuarios de prueba
+├── frontend/
+│   └── test_auth.spec.ts     # Playwright: registro UI, login UI, validaciones, persistencia
+├── run_tests.py              # Runner principal
+└── README.md                 # Documentación completa tests
 ```
 
 ---
@@ -375,13 +420,26 @@ graphify auto-update jasspalian_backend/
 
 ---
 
-## 📄 Licencia
+## 📋 Progreso Reciente (Junio 2026)
 
-Proyecto privado - JASS Palian. Todos los derechos reservados.
+### ✅ Completado
+- **Autenticación completa**: Registro, login, refresh token, perfil con validaciones robustas
+- **Dashboard Residente (8 páginas)**: Home, Recibos, Pagos, Historial, Reclamos, Notificaciones, Perfil, Configuración
+- **Dashboard Admin (7 páginas)**: Home, Usuarios, Propiedades, Facturas, Pagos, Reclamos, Reportes
+- **Endpoints Admin**: Estadísticas, ingresos mensuales (12m), reclamos por tipo, métodos de pago, top usuarios
+- **Tests automatizados**: 9 tests API (health, registro, login, login, refresh, perfil, validaciones)
+- **Tests E2E**: Playwright configurado para frontend
+- **Fix token refresh**: TokenManager lee refresh_token de cookies HttpOnly, recarga automática
+- **Middleware**: Protege rutas `/dashboard/*` y `/admin/*` con validación JWT
+
+### 🔄 En Desarrollo / Pendiente
+- Tests unitarios backend para modelos Factura/Pago/Reclamo (requiere fix Decimal/float)
+- Configuración Playwright completa con CI/CD
+- Documentación Swagger/OpenAPI para endpoints
 
 ---
 
-## 📞 Soporte
+## 📄 Licencia
 
 - **Email**: 71433164@continental.edu.pe
 - **WhatsApp**: +51 967801686

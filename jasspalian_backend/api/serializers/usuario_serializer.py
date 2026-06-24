@@ -10,7 +10,7 @@ class UsuarioSerializer(ChoiceDisplayMixin, serializers.ModelSerializer):
         model = Usuario
         fields = [
             'id', 'dni', 'nombres', 'apellidos', 'nombre_completo',
-            'telefono', 'email', 'direccion', 'sector', 'tipo_usuario', 'tipo_usuario_display',
+            'telefono', 'email', 'direccion', 'sector', 'tipo_usuario',
             'foto_url', 'fecha_registro', 'fecha_registro_formateada', 'activo',
             'is_active', 'is_staff', 'is_superuser'
         ]

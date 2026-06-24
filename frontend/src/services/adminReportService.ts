@@ -7,6 +7,7 @@ export interface DashboardStats {
   totalFacturasPendientes: number;
   totalPagosMes: number;
   totalReclamosPendientes: number;
+  ingresosMensuales: IngresoMensual[];
 }
 
 export interface IngresoMensual {
@@ -33,7 +34,7 @@ export interface UsuarioTop {
 }
 
 export const adminReportService = {
-  // Obtener estadísticas del dashboard
+  // Obtener estadísticas del dashboard (incluye ingresosMensuales)
   getDashboardStats: async (): Promise<DashboardStats> => {
     try {
       const response = await api.get('/admin/estadisticas/');
@@ -46,43 +47,30 @@ export const adminReportService = {
         totalFacturasPendientes: 0,
         totalPagosMes: 0,
         totalReclamosPendientes: 0,
+        ingresosMensuales: [],
       };
     }
   },
 
-  // Obtener ingresos mensuales
+  // Obtener ingresos mensuales (12 meses del año)
   getIngresosMensuales: async (anio: number): Promise<IngresoMensual[]> => {
     try {
       const response = await api.get(`/admin/ingresos-mensuales/?anio=${anio}`);
       return response.data;
     } catch (error) {
       console.error('Error obteniendo ingresos mensuales:', error);
-      // Datos de ejemplo
-      return [
-        { mes: 'Ene', total: 1250 },
-        { mes: 'Feb', total: 1320 },
-        { mes: 'Mar', total: 1480 },
-        { mes: 'Abr', total: 1560 },
-        { mes: 'May', total: 1620 },
-        { mes: 'Jun', total: 1710 },
-      ];
+      return [];
     }
   },
 
   // Obtener reclamos por tipo
   getReclamosPorTipo: async (): Promise<ReclamoPorTipo[]> => {
     try {
-      const response = await api.get('/reclamos/estadisticas/');
+      const response = await api.get('/admin/reclamos-por-tipo/');
       return response.data;
     } catch (error) {
       console.error('Error obteniendo reclamos por tipo:', error);
-      return [
-        { tipo: 'Fugas', cantidad: 12 },
-        { tipo: 'Calidad', cantidad: 8 },
-        { tipo: 'Medidor', cantidad: 5 },
-        { tipo: 'Facturación', cantidad: 10 },
-        { tipo: 'Otros', cantidad: 3 },
-      ];
+      return [];
     }
   },
 
@@ -93,29 +81,18 @@ export const adminReportService = {
       return response.data;
     } catch (error) {
       console.error('Error obteniendo métodos de pago:', error);
-      return [
-        { metodo: 'Yape', cantidad: 45, total: 3825 },
-        { metodo: 'Plin', cantidad: 30, total: 2550 },
-        { metodo: 'Transferencia', cantidad: 20, total: 1700 },
-        { metodo: 'Efectivo', cantidad: 15, total: 1275 },
-      ];
+      return [];
     }
   },
 
   // Obtener top usuarios por pagos
-  //    getTopUsuarios: async (): Promise<UsuarioTop[]> => {
-   //     try {
-   //       const response = await api.get('/admin/top-usuarios/');
-   //       return response.data;
-   //     } catch (error) {
-     //     console.error('Error obteniendo top usuarios:', error);
-    //      return [
-  //          { id: 1, nombre: 'Juan Pérez', pagos: 12, total: 1020 },
-   //         { id: 2, nombre: 'María López', pagos: 10, total: 850 },
-  //          { id: 3, nombre: 'Carlos Ramírez', pagos: 8, total: 680 },
-  //          { id: 4, nombre: 'Ana Torres', pagos: 7, total: 595 },
-   //         { id: 5, nombre: 'Luis García', pagos: 6, total: 510 },
-  //        ];
-  //      }
-  //    },
+  getTopUsuarios: async (): Promise<UsuarioTop[]> => {
+    try {
+      const response = await api.get('/admin/top-usuarios/');
+      return response.data;
+    } catch (error) {
+      console.error('Error obteniendo top usuarios:', error);
+      return [];
+    }
+  },
 };

@@ -66,27 +66,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
-      // Intentar obtener token de cookies o localStorage
-      let token = null;
+      // Verificar si hay token disponible ANTES de intentar fetch
+      const hasToken = document.cookie.split(';').some(c => c.trim().startsWith('access_token=')) 
+        || localStorage.getItem('access_token');
       
-      // Primero intentar desde cookies
-      const cookies = document.cookie.split(';');
-      for (const cookie of cookies) {
-        const [name, value] = cookie.trim().split('=');
-        if (name === 'access_token') {
-          token = value;
-          break;
-        }
+      if (!hasToken) {
+        setLoading(false);
+        return;
       }
-      
-      // Si no esta en cookies, intentar desde localStorage
-      if (!token) {
-        token = localStorage.getItem('access_token');
-      }
-      
-      if (token) {
-        await fetchUser(token);
-      } else {
+
+      try {
+        // Usar la instancia api con interceptores de refresh token
+        const response = await api.get('/perfil/');
+        
+        // Guardar el usuario
+        const userData = response.data.data || response.data;
+        setUser(userData);
+      } catch (error) {
+        console.error('Error fetching user:', error);
+        // Si el token es invalido, limpiar todo
+        clearTokens();
+        setUser(null);
+      } finally {
         setLoading(false);
       }
     };

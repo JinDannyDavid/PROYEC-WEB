@@ -18,6 +18,7 @@ export default function ReportesPage() {
     totalFacturasPendientes: 0,
     totalPagosMes: 0,
     totalReclamosPendientes: 0,
+    ingresosMensuales: [],
   });
   const [ingresosMensuales, setIngresosMensuales] = useState<IngresoMensual[]>([]);
   const [reclamosPorTipo, setReclamosPorTipo] = useState<ReclamoPorTipo[]>([]);
@@ -35,18 +36,19 @@ export default function ReportesPage() {
   const cargarDatos = async () => {
     setCargando(true);
     try {
-      const [statsData, ingresosData, reclamosData, metodosData] = await Promise.all([
+      const [statsData, ingresosData, reclamosData, metodosData, topUsuariosData] = await Promise.all([
         adminReportService.getDashboardStats(),
         adminReportService.getIngresosMensuales(selectedYear),
         adminReportService.getReclamosPorTipo(),
         adminReportService.getMetodosPagoStats(),
+        adminReportService.getTopUsuarios(),
       ]);
       setStats(statsData);
-      setIngresosMensuales(ingresosData);
+      // Usar ingresos mensuales del endpoint específico si está disponible, sino del dashboard
+      setIngresosMensuales(ingresosData.length > 0 ? ingresosData : statsData.ingresosMensuales || []);
       setReclamosPorTipo(reclamosData);
       setMetodosPago(metodosData);
-      // For now, set empty topUsuarios since the function is commented out
-      setTopUsuarios([]);
+      setTopUsuarios(topUsuariosData);
     } catch (error) {
       console.error('Error cargando datos:', error);
       toast.error('No se pudieron cargar los datos');
