@@ -1,25 +1,146 @@
-**/.classpath
-**/.dockerignore
-**/.env
-**/.git
-**/.gitignore
-**/.project
-**/.settings
-**/.toolstarget
-**/.vs
-**/.vscode
-**/*.*proj.user
-**/*.dbmdl
-**/*.jfm
-**/bin
-**/charts
-**/docker-compose*
-**/compose*
-**/Dockerfile*
-**/node_modules
-**/npm-debug.log
-**/obj
-**/secrets.dev.yaml
-**/values.dev.yaml
-LICENSE
-README.md
+# ===========================================
+# JASS Palian - Docker Ignore (Root)
+# Only include: frontend/, jasspalian_backend/, and root config files
+# ===========================================
+
+# -------------------------------------------
+# EXCLUDED PROJECTS / SUBMODULES
+# -------------------------------------------
+graphify-out
+hermes-agent
+G0DM0D3
+.agents
+.opencode
+.vscode
+# -------------------------------------------
+# GIT & VERSION CONTROL
+# -------------------------------------------
+.git
+.gitignore
+.gitattributes
+.gitmodules
+
+# -------------------------------------------
+# IDE & EDITOR
+# -------------------------------------------
+.vscode
+.idea
+*.swp
+*.swo
+*.sublime-*
+
+# -------------------------------------------
+# OS FILES
+# -------------------------------------------
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# -------------------------------------------
+# ENVIRONMENT & SECRETS
+# -------------------------------------------
+.env
+.env.local
+.env*.local
+.env.production
+frontend/.env.local
+frontend/.env.production
+jasspalian_backend/.env
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+secrets/
+*.secret
+
+# -------------------------------------------
+# DOCUMENTATION (not needed in build)
+# -------------------------------------------
+*.md
+!README.md
+docs/
+CHANGELOG*
+LICENSE*
+
+# -------------------------------------------
+# LOGS & TEMP
+# -------------------------------------------
+*.log
+logs/
+tmp/
+temp/
+*.tmp
+
+# -------------------------------------------
+# TESTS & COVERAGE
+# -------------------------------------------
+coverage/
+.nyc_output/
+htmlcov/
+.coverage
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+jest.config.js
+jest.setup.ts
+
+# -------------------------------------------
+# BUILD ARTIFACTS
+# -------------------------------------------
+build/
+dist/
+*.tsbuildinfo
+.next/
+out/
+
+# -------------------------------------------
+# DOCKER FILES (not needed in build context)
+# -------------------------------------------
+docker-compose*.yml
+docker-compose*.yaml
+Dockerfile*
+.docker/
+nginx*.conf
+docker-compose.workbench.yml
+docker-compose.windows.yml
+
+# -------------------------------------------
+# PYTHON CACHE
+# -------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+venv/
+env/
+.venv
+
+# -------------------------------------------
+# NODE MODULES
+# -------------------------------------------
+node_modules/
+frontend/node_modules/
+
+# -------------------------------------------
+# DATABASE
+# -------------------------------------------
+*.sqlite3
+db.sqlite3
+*.sql
+*.dump
+*.db
+
+# -------------------------------------------
+# SSL CERTS (use secrets in production)
+# -------------------------------------------
+ssl/
+*.pem
+*.key
+*.crt

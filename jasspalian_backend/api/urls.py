@@ -3,7 +3,7 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView
 from .views import CustomTokenObtainPairView
-from .views.test_views import test_connection
+from .views.test_views import test_connection, health_check
 from .views.admin_views import AdminEstadisticasView
 from .views import (
     # Usuario
@@ -122,4 +122,5 @@ urlpatterns = [
 
     path('admin/estadisticas/', AdminEstadisticasView.as_view(), name='admin-estadisticas'),
     path('test/', test_connection, name='test'),
+    path('health/', health_check, name='health'),
 ]
