@@ -24,18 +24,18 @@ Monorepo con arquitectura cliente-servidor:
 
 ### Endpoints API Principales
 
-| Endpoint | Método | Descripción | Auth |
-|----------|--------|-------------|------|
-| `/api/token/` | POST | Login (obtiene access + refresh) | Público |
-| `/api/token/refresh/` | POST | Renueva access token | Refresh token |
-| `/api/usuarios/` | POST | Registro de usuario | Público |
-| `/api/perfil/` | GET | Perfil usuario autenticado | Bearer token |
-| `/api/admin/estadisticas/` | GET | Stats dashboard (6 meses ingresos) | Admin |
-| `/api/admin/ingresos-mensuales/?anio=2026` | GET | Ingresos 12 meses | Admin |
-| `/api/admin/reclamos-por-tipo/` | GET | Reclamos agrupados por tipo | Admin |
-| `/api/admin/metodos-pago/` | GET | Stats métodos de pago | Admin |
-| `/api/admin/top-usuarios/` | GET | Top 10 usuarios por pagos | Admin |
-| CRUD completos para: usuarios, propiedades, facturas, pagos, reclamos, notificaciones | | | Según rol |
+| Endpoint                                                                              | Método | Descripción                        | Auth          |
+| ------------------------------------------------------------------------------------- | ------ | ---------------------------------- | ------------- |
+| `/api/token/`                                                                         | POST   | Login (obtiene access + refresh)   | Público       |
+| `/api/token/refresh/`                                                                 | POST   | Renueva access token               | Refresh token |
+| `/api/usuarios/`                                                                      | POST   | Registro de usuario                | Público       |
+| `/api/perfil/`                                                                        | GET    | Perfil usuario autenticado         | Bearer token  |
+| `/api/admin/estadisticas/`                                                            | GET    | Stats dashboard (6 meses ingresos) | Admin         |
+| `/api/admin/ingresos-mensuales/?anio=2026`                                            | GET    | Ingresos 12 meses                  | Admin         |
+| `/api/admin/reclamos-por-tipo/`                                                       | GET    | Reclamos agrupados por tipo        | Admin         |
+| `/api/admin/metodos-pago/`                                                            | GET    | Stats métodos de pago              | Admin         |
+| `/api/admin/top-usuarios/`                                                            | GET    | Top 10 usuarios por pagos          | Admin         |
+| CRUD completos para: usuarios, propiedades, facturas, pagos, reclamos, notificaciones |        |                                    | Según rol     |
 
 ---
 
@@ -236,13 +236,14 @@ NEXT_PUBLIC_API_URL=http://localhost:8000/api
 
 Después de `docker-compose up` y migraciones, estos usuarios están disponibles:
 
-| Rol       | DNI        | Contraseña | Nombre            | Email                  |
-| --------- | ---------- | ---------- | ----------------- | ---------------------- |
-| Admin     | 87654321   | Test123!   | María González    | maria@test.com         |
-| Vecino    | 12345678   | Test123!   | Juan Pérez        | juan@test.com          |
-| Vecino    | 11111111   | Test123!   | Juan Test         | juan.test@jasspalian.com |
+| Rol    | DNI      | Contraseña | Nombre         | Email                    |
+| ------ | -------- | ---------- | -------------- | ------------------------ |
+| Admin  | 87654321 | Test123!   | María González | maria@test.com           |
+| Vecino | 12345678 | Test123!   | Juan Pérez     | juan@test.com            |
+| Vecino | 11111111 | Test123!   | Juan Test      | juan.test@jasspalian.com |
 
-> **Nota**: 
+> **Nota**:
+>
 > - El usuario admin original `admin@jasspalian.gob.pe` / `admin123` se crea si se ejecuta `createsuperuser`
 > - Los usuarios de prueba se crean automáticamente al ejecutar los tests de API
 > - Cambiar contraseñas en producción inmediatamente.
@@ -293,6 +294,7 @@ Después de `docker-compose up` y migraciones, estos usuarios están disponibles
 - `/admin/reportes` - Reportes y estadísticas: stats cards, gráficos (ingresos 12 meses, reclamos por tipo, métodos de pago), tablas top usuarios, filtros por año
 
 **Componentes Admin (28+):**
+
 - Layout: `AdminLayout`, `Sidebar`, `Header`, `AdminStats`
 - Tablas: `UsuariosTable`, `PropiedadesTable`, `FacturasTable`, `PagosTable`, `ReclamosTable`
 - Modales: `UsuarioFormModal`, `PropiedadesFormModal`, `FacturaFormModal`, `PagoFormModal`, `ReclamoDetailModal`
@@ -423,6 +425,7 @@ graphify auto-update jasspalian_backend/
 ## 📋 Progreso Reciente (Junio 2026)
 
 ### ✅ Completado
+
 - **Autenticación completa**: Registro, login, refresh token, perfil con validaciones robustas
 - **Dashboard Residente (8 páginas)**: Home, Recibos, Pagos, Historial, Reclamos, Notificaciones, Perfil, Configuración
 - **Dashboard Admin (7 páginas)**: Home, Usuarios, Propiedades, Facturas, Pagos, Reclamos, Reportes
@@ -433,6 +436,7 @@ graphify auto-update jasspalian_backend/
 - **Middleware**: Protege rutas `/dashboard/*` y `/admin/*` con validación JWT
 
 ### 🔄 En Desarrollo / Pendiente
+
 - Tests unitarios backend para modelos Factura/Pago/Reclamo (requiere fix Decimal/float)
 - Configuración Playwright completa con CI/CD
 - Documentación Swagger/OpenAPI para endpoints
@@ -440,6 +444,8 @@ graphify auto-update jasspalian_backend/
 ---
 
 ## 📄 Licencia
+
+TODOS LOS DERECHOS RESERVADOS -- BY BALDEON MARTINEZ DAVID J.D.
 
 - **Email**: 71433164@continental.edu.pe
 - **WhatsApp**: +51 967801686
